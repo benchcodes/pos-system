@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 
 const LOW_STOCK_LIMIT = 20
+const PRODUCT_CATEGORIES = ['Coffee', 'Pastry', 'Dessert', 'Beverage', 'Tea']
 
 function CubeIcon() {
   return (
@@ -82,7 +83,27 @@ function XIcon() {
 }
 
 function formatCurrency(value) {
-  return `$${Number(value).toFixed(2)}`
+  return `₱${Number(value).toFixed(2)}`
+}
+
+function getDisplaySku(product, index) {
+  const prefixByCategory = {
+    Coffee: 'COF',
+    Pastry: 'PAS',
+    Dessert: 'DES',
+    Beverage: 'BEV',
+    Tea: 'TEA',
+  }
+  const prefix = prefixByCategory[product.category] ?? 'GEN'
+  const slug = product.name
+    .replace(/[^a-zA-Z\s]/g, '')
+    .trim()
+    .split(/\s+/)
+    .map((part) => part.slice(0, 3).toUpperCase())
+    .join('-')
+    .slice(0, 7)
+  const code = String(index + 1).padStart(3, '0')
+  return `${prefix}-${slug}-${code}`
 }
 
 function Modal({ title, onClose, children }) {
@@ -125,12 +146,11 @@ function ProductModal({ initial, onSave, onClose }) {
     initial
       ? {
           name: initial.name,
-          sku: initial.sku,
           category: initial.category,
           price: String(initial.price),
           stock: String(initial.stock),
         }
-      : { name: '', sku: '', category: '', price: '', stock: '' }
+      : { name: '', category: 'Beverage', price: '0.00', stock: '0' }
   )
   const [errors, setErrors] = useState({})
 
@@ -142,10 +162,9 @@ function ProductModal({ initial, onSave, onClose }) {
   function validate() {
     const next = {}
     if (!form.name.trim()) next.name = 'Name is required'
-    if (!form.sku.trim()) next.sku = 'SKU is required'
     if (!form.category.trim()) next.category = 'Category is required'
-    if (!form.price || isNaN(Number(form.price)) || Number(form.price) < 0) next.price = 'Enter a valid price'
-    if (!form.stock || isNaN(Number(form.stock)) || !Number.isInteger(Number(form.stock)) || Number(form.stock) < 0) {
+    if (Number.isNaN(Number(form.price)) || Number(form.price) < 0) next.price = 'Enter a valid price'
+    if (Number.isNaN(Number(form.stock)) || !Number.isInteger(Number(form.stock)) || Number(form.stock) < 0) {
       next.stock = 'Enter a valid whole number'
     }
     return next
@@ -161,7 +180,6 @@ function ProductModal({ initial, onSave, onClose }) {
 
     onSave({
       name: form.name.trim(),
-      sku: form.sku.trim(),
       category: form.category.trim(),
       price: Number(form.price),
       stock: Number(form.stock),
@@ -175,16 +193,16 @@ function ProductModal({ initial, onSave, onClose }) {
           <input className={inputClass} value={form.name} onChange={(event) => set('name', event.target.value)} placeholder="e.g. Espresso" />
           {errors.name && <span className="text-[0.78rem] text-red-500">{errors.name}</span>}
         </Field>
-        <Field label="SKU">
-          <input className={inputClass} value={form.sku} onChange={(event) => set('sku', event.target.value)} placeholder="e.g. COF-ESP-001" />
-          {errors.sku && <span className="text-[0.78rem] text-red-500">{errors.sku}</span>}
-        </Field>
         <Field label="Category">
-          <input className={inputClass} value={form.category} onChange={(event) => set('category', event.target.value)} placeholder="e.g. Coffee" />
+          <select className={inputClass} value={form.category} onChange={(event) => set('category', event.target.value)}>
+            {PRODUCT_CATEGORIES.map((category) => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
           {errors.category && <span className="text-[0.78rem] text-red-500">{errors.category}</span>}
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Price ($)">
+          <Field label="Price (₱)">
             <input className={inputClass} type="number" min="0" step="0.01" value={form.price} onChange={(event) => set('price', event.target.value)} placeholder="0.00" />
             {errors.price && <span className="text-[0.78rem] text-red-500">{errors.price}</span>}
           </Field>
@@ -288,22 +306,31 @@ function IngredientModal({ initial, onSave, onClose }) {
   )
 }
 
-function InventoryPage({ onLogout }) {
+function InventoryPage({
+  onLogout,
+  sharedProducts,
+  onProductsChange,
+  sharedIngredients,
+  onIngredientsChange,
+}) {
   const [activeTab, setActiveTab] = useState('products')
-  const [products, setProducts] = useState([])
-  const [ingredients, setIngredients] = useState([])
+  const [localProducts, setLocalProducts] = useState([])
+  const [localIngredients, setLocalIngredients] = useState([])
   const [search, setSearch] = useState('')
   const [productModal, setProductModal] = useState(null)
   const [ingredientModal, setIngredientModal] = useState(null)
-  const [nextProductId, setNextProductId] = useState(1)
-  const [nextIngredientId, setNextIngredientId] = useState(1)
+
+  const products = sharedProducts ?? localProducts
+  const setProducts = onProductsChange ?? setLocalProducts
+  const ingredients = sharedIngredients ?? localIngredients
+  const setIngredients = onIngredientsChange ?? setLocalIngredients
 
   const filteredProducts = useMemo(() => {
     const term = search.toLowerCase()
     return products.filter(
       (product) =>
         product.name.toLowerCase().includes(term) ||
-        product.sku.toLowerCase().includes(term) ||
+        (product.sku ?? '').toLowerCase().includes(term) ||
         product.category.toLowerCase().includes(term)
     )
   }, [products, search])
@@ -339,8 +366,10 @@ function InventoryPage({ onLogout }) {
 
   function handleSaveProduct(data) {
     if (productModal === 'add') {
-      setProducts((prev) => [...prev, { id: nextProductId, ...data }])
-      setNextProductId((value) => value + 1)
+      setProducts((prev) => {
+        const nextId = prev.length === 0 ? 1 : Math.max(...prev.map((product) => product.id)) + 1
+        return [...prev, { id: nextId, ...data }]
+      })
     } else {
       setProducts((prev) => prev.map((product) => (product.id === productModal.id ? { ...product, ...data } : product)))
     }
@@ -353,8 +382,7 @@ function InventoryPage({ onLogout }) {
 
   function handleSaveIngredient(data) {
     if (ingredientModal === 'add') {
-      setIngredients((prev) => [...prev, { id: nextIngredientId, ...data }])
-      setNextIngredientId((value) => value + 1)
+      setIngredients((prev) => [...prev, { id: crypto.randomUUID(), ...data }])
     } else {
       setIngredients((prev) => prev.map((ingredient) => (ingredient.id === ingredientModal.id ? { ...ingredient, ...data } : ingredient)))
     }
@@ -417,10 +445,10 @@ function InventoryPage({ onLogout }) {
         <div className="px-5 pt-4 pb-5">
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-[1.55rem] leading-tight font-bold text-[#0f2542]">Inventory Management</h2>
+              <h2 className="text-[2rem] leading-tight font-bold text-[#0f2542]">Inventory Management</h2>
               <p className="mt-1 text-[0.88rem] text-[#64748b]">
                 {activeTab === 'products'
-                  ? `${products.length} total product${products.length !== 1 ? 's' : ''}`
+                  ? `${products.length} total products`
                   : `${ingredients.length} total ingredient${ingredients.length !== 1 ? 's' : ''}`}
               </p>
             </div>
@@ -428,7 +456,7 @@ function InventoryPage({ onLogout }) {
               onClick={() => (activeTab === 'products' ? setProductModal('add') : setIngredientModal('add'))}
               className="inline-flex items-center gap-2 rounded-lg bg-[#020617] px-4 py-2.5 text-[0.9rem] font-semibold text-white"
             >
-              <span className="text-[1.1rem]">+</span>
+              <span className="text-[1.05rem]">+</span>
               {activeTab === 'products' ? 'Add Product' : 'Add Ingredient'}
             </button>
           </div>
@@ -514,7 +542,7 @@ function InventoryPage({ onLogout }) {
           )}
 
           <label className="mt-4 flex items-center gap-2 rounded-lg bg-[#f3f4f6] px-3 py-2.5 text-[#6b7280]">
-            <span className="size-4 [&_svg]:size-full [&_svg]:stroke-[1.9]">
+            <span className="[&_svg]:size-4">
               <SearchIcon />
             </span>
             <input
@@ -522,7 +550,7 @@ function InventoryPage({ onLogout }) {
               placeholder={activeTab === 'products' ? 'Search products...' : 'Search ingredients...'}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="w-full border-none bg-transparent text-[0.93rem] text-[#111827] outline-none"
+              className="w-full border-none bg-transparent text-[0.92rem] text-[#111827] outline-none"
             />
           </label>
         </div>
@@ -543,49 +571,50 @@ function InventoryPage({ onLogout }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProducts.length === 0 ? (
+                  {filteredProducts.map((product, index) => (
+                    <tr key={product.id} className="text-[0.95rem] text-[#111827]">
+                      <td className="border-b border-[#e5e7eb] px-3 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="size-9 rounded-md bg-[#eef2f7]" />
+                          <span className="font-medium">{product.name}</span>
+                        </div>
+                      </td>
+                      <td className="border-b border-[#e5e7eb] px-3 py-3 text-[#35547f]">{product.sku ?? getDisplaySku(product, index)}</td>
+                      <td className="border-b border-[#e5e7eb] px-3 py-3">
+                        <span className="rounded-md bg-[#f3f4f6] px-2 py-1 text-[0.82rem]">{product.category}</span>
+                      </td>
+                      <td className="border-b border-[#e5e7eb] px-3 py-3 font-semibold">{formatCurrency(product.price)}</td>
+                      <td className="border-b border-[#e5e7eb] px-3 py-3">{product.stock}</td>
+                      <td className="border-b border-[#e5e7eb] px-3 py-3 font-semibold">{formatCurrency(product.price * product.stock)}</td>
+                      <td className="border-b border-[#e5e7eb] px-3 py-3">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            aria-label={`Edit ${product.name}`}
+                            onClick={() => setProductModal(product)}
+                            className="grid size-8 place-items-center rounded-lg border border-[#d1d5db] text-[#334155] hover:bg-[#f8fafc] [&_svg]:size-4"
+                          >
+                            <PencilIcon />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`Delete ${product.name}`}
+                            onClick={() => handleDeleteProduct(product.id)}
+                            className="grid size-8 place-items-center rounded-lg border border-[#fecaca] text-[#ef4444] hover:bg-[#fef2f2] [&_svg]:size-4"
+                          >
+                            <TrashIcon />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+
+                  {filteredProducts.length === 0 && (
                     <tr>
                       <td colSpan="7" className="px-3 py-8 text-center text-[0.9rem] text-[#6b7280]">
                         No products yet. Click Add Product to create one.
                       </td>
                     </tr>
-                  ) : (
-                    filteredProducts.map((product) => {
-                      const value = product.price * product.stock
-
-                      return (
-                        <tr key={product.id} className="text-[0.95rem] text-[#111827]">
-                          <td className="border-b border-[#e5e7eb] px-3 py-3 font-medium">{product.name}</td>
-                          <td className="border-b border-[#e5e7eb] px-3 py-3 text-[#35547f]">{product.sku}</td>
-                          <td className="border-b border-[#e5e7eb] px-3 py-3">
-                            <span className="rounded-md bg-[#f3f4f6] px-2 py-1 text-[0.82rem]">{product.category}</span>
-                          </td>
-                          <td className="border-b border-[#e5e7eb] px-3 py-3 font-semibold">{formatCurrency(product.price)}</td>
-                          <td className="border-b border-[#e5e7eb] px-3 py-3">{product.stock}</td>
-                          <td className="border-b border-[#e5e7eb] px-3 py-3 font-semibold">{formatCurrency(value)}</td>
-                          <td className="border-b border-[#e5e7eb] px-3 py-3">
-                            <div className="flex justify-end gap-2">
-                              <button
-                                type="button"
-                                aria-label={`Edit ${product.name}`}
-                                onClick={() => setProductModal(product)}
-                                className="grid size-8 place-items-center rounded-lg border border-[#d1d5db] text-[#334155] hover:bg-[#f8fafc] [&_svg]:size-4"
-                              >
-                                <PencilIcon />
-                              </button>
-                              <button
-                                type="button"
-                                aria-label={`Delete ${product.name}`}
-                                onClick={() => handleDeleteProduct(product.id)}
-                                className="grid size-8 place-items-center rounded-lg border border-[#fecaca] text-[#ef4444] hover:bg-[#fef2f2] [&_svg]:size-4"
-                              >
-                                <TrashIcon />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })
                   )}
                 </tbody>
               </table>

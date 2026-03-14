@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { products } from '../data/products'
 
 function CartIcon() {
   return (
@@ -17,13 +16,28 @@ const CATEGORIES = ['All', 'Coffee', 'Pastry', 'Dessert', 'Beverage', 'Tea']
 // Tax rate applied on top of the subtotal
 const TAX_RATE = 0.1
 
-function CashierPage({ onLogout }) {
+function formatMoney(value) {
+  return `₱${Number(value).toFixed(2)}`
+}
+
+function CashierPage({
+  onLogout,
+  products = [],
+  onProductsChange,
+  onSalesChange,
+}) {
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [cart, setCart] = useState([])
+  const [localProducts, setLocalProducts] = useState([])
+  const [, setLocalSales] = useState([])
+
+  const managedProducts = Array.isArray(products) ? products : localProducts
+  const setManagedProducts = onProductsChange ?? setLocalProducts
+  const setSales = onSalesChange ?? setLocalSales
 
   // Filter products by search text and selected category
-  const filteredProducts = products.filter((product) => {
+  const filteredProducts = managedProducts.filter((product) => {
     const matchesSearch =
       product.name.toLowerCase().includes(search.toLowerCase()) ||
       product.sku.toLowerCase().includes(search.toLowerCase())
@@ -48,6 +62,45 @@ function CashierPage({ onLogout }) {
   }
 
   function clearCart() {
+    setCart([])
+  }
+
+  function handleCheckout() {
+    if (cart.length === 0) return
+
+    const now = Date.now()
+    const saleId = `SALE-${String(now).slice(-8)}`
+    const subtotalValue = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
+    const taxValue = subtotalValue * TAX_RATE
+    const totalValue = subtotalValue + taxValue
+
+    const nextSale = {
+      id: saleId,
+      createdAt: now,
+      paymentMethod: 'Cash',
+      items: cart.map((item) => ({
+        name: item.product.name,
+        quantity: item.quantity,
+        unitPrice: Number(item.product.price),
+        lineTotal: Number(item.product.price) * item.quantity,
+      })),
+      subtotal: subtotalValue,
+      tax: taxValue,
+      total: totalValue,
+    }
+
+    setSales((prev) => [nextSale, ...prev])
+    setManagedProducts((prev) =>
+      prev.map((product) => {
+        const soldItem = cart.find((item) => item.product.id === product.id)
+        if (!soldItem) return product
+
+        return {
+          ...product,
+          stock: Math.max(0, Number(product.stock) - soldItem.quantity),
+        }
+      })
+    )
     setCart([])
   }
 
@@ -138,7 +191,7 @@ function CashierPage({ onLogout }) {
                   <p className="font-semibold text-[#111827]">{product.name}</p>
                   <p className="text-[0.78rem] text-[#6b7280]">{product.category}</p>
                   <p className="mt-1 text-[0.88rem] font-bold text-[#2563eb]">
-                    ${product.price.toFixed(2)}{' '}
+                    {formatMoney(product.price)}{' '}
                     <span className="text-[0.75rem] font-normal text-[#9ca3af]">
                       Stock: {product.stock}
                     </span>
@@ -176,7 +229,7 @@ function CashierPage({ onLogout }) {
                     {item.product.name} ×{item.quantity}
                   </span>
                   <span className="font-semibold text-[#0f2542]">
-                    ${(item.product.price * item.quantity).toFixed(2)}
+                    {formatMoney(item.product.price * item.quantity)}
                   </span>
                 </div>
               ))}
@@ -188,19 +241,20 @@ function CashierPage({ onLogout }) {
         <div className="mt-4 border-t border-[#e5e7eb] pt-4">
           <div className="mb-1 flex justify-between text-[0.85rem] text-[#374151]">
             <span>Subtotal</span>
-            <span>${subtotal.toFixed(2)}</span>
+            <span>{formatMoney(subtotal)}</span>
           </div>
           <div className="mb-3 flex justify-between text-[0.85rem] text-[#374151]">
             <span>Tax (10%)</span>
-            <span>${tax.toFixed(2)}</span>
+            <span>{formatMoney(tax)}</span>
           </div>
           <div className="mb-4 flex justify-between text-[1rem] font-bold text-[#0f2542]">
             <span>Total</span>
-            <span>${total.toFixed(2)}</span>
+            <span>{formatMoney(total)}</span>
           </div>
 
           {/* Checkout: gray when empty, blue when cart has items */}
           <button
+            onClick={handleCheckout}
             disabled={cart.length === 0}
             className={`mb-2 w-full rounded-lg py-2.5 text-[0.9rem] font-semibold text-white transition-colors ${
               cart.length === 0 ? 'bg-[#9ca3af]' : 'bg-[#2563eb] hover:bg-[#1d4ed8]'

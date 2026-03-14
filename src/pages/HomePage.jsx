@@ -1,7 +1,31 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import CashierPage from './CashierPage'
 import InventoryPage from './InventoryPage'
 import AdminPage from './AdminPage'
+
+const STORAGE_KEYS = {
+  products: 'pos-system-products',
+  ingredients: 'pos-system-ingredients',
+  sales: 'pos-system-sales',
+}
+
+function loadStoredList(key) {
+  if (typeof window === 'undefined') {
+    return []
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(key)
+    if (!rawValue) {
+      return []
+    }
+
+    const parsedValue = JSON.parse(rawValue)
+    return Array.isArray(parsedValue) ? parsedValue : []
+  } catch {
+    return []
+  }
+}
 
 const ROLE_OPTIONS = [
   {
@@ -115,17 +139,54 @@ function RoleCard({ role, onSelect }) {
   )
 }
 
-function resolvePage(pageKey, onLogout) {
+function resolvePage(
+  pageKey,
+  onLogout,
+  products,
+  onProductsChange,
+  ingredients,
+  onIngredientsChange,
+  sales,
+  onSalesChange,
+  onResetAllData
+) {
   if (pageKey === 'cashier') {
-    return <CashierPage onLogout={onLogout} />
+    return (
+      <CashierPage
+        onLogout={onLogout}
+        products={products}
+        onProductsChange={onProductsChange}
+        sales={sales}
+        onSalesChange={onSalesChange}
+      />
+    )
   }
 
   if (pageKey === 'inventory') {
-    return <InventoryPage onLogout={onLogout} />
+    return (
+      <InventoryPage
+        onLogout={onLogout}
+        sharedProducts={products}
+        onProductsChange={onProductsChange}
+        sharedIngredients={ingredients}
+        onIngredientsChange={onIngredientsChange}
+      />
+    )
   }
 
   if (pageKey === 'admin') {
-    return <AdminPage onLogout={onLogout} />
+    return (
+      <AdminPage
+        onLogout={onLogout}
+        products={products}
+        onProductsChange={onProductsChange}
+        ingredients={ingredients}
+        onIngredientsChange={onIngredientsChange}
+        sales={sales}
+        onSalesChange={onSalesChange}
+        onResetAllData={onResetAllData}
+      />
+    )
   }
 
   return null
@@ -133,7 +194,45 @@ function resolvePage(pageKey, onLogout) {
 
 function HomePage() {
   const [currentPage, setCurrentPage] = useState(null)
-  const pageView = resolvePage(currentPage, () => setCurrentPage(null))
+  const [sharedProducts, setSharedProducts] = useState(() => loadStoredList(STORAGE_KEYS.products))
+  const [sharedIngredients, setSharedIngredients] = useState(() => loadStoredList(STORAGE_KEYS.ingredients))
+  const [sharedSales, setSharedSales] = useState(() => loadStoredList(STORAGE_KEYS.sales))
+
+  function handleResetAllData() {
+    setSharedProducts([])
+    setSharedIngredients([])
+    setSharedSales([])
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(STORAGE_KEYS.products)
+      window.localStorage.removeItem(STORAGE_KEYS.ingredients)
+      window.localStorage.removeItem(STORAGE_KEYS.sales)
+    }
+  }
+
+  useEffect(() => {
+    window.localStorage.setItem(STORAGE_KEYS.products, JSON.stringify(sharedProducts))
+  }, [sharedProducts])
+
+  useEffect(() => {
+    window.localStorage.setItem(STORAGE_KEYS.ingredients, JSON.stringify(sharedIngredients))
+  }, [sharedIngredients])
+
+  useEffect(() => {
+    window.localStorage.setItem(STORAGE_KEYS.sales, JSON.stringify(sharedSales))
+  }, [sharedSales])
+
+  const pageView = resolvePage(
+    currentPage,
+    () => setCurrentPage(null),
+    sharedProducts,
+    setSharedProducts,
+    sharedIngredients,
+    setSharedIngredients,
+    sharedSales,
+    setSharedSales,
+    handleResetAllData
+  )
 
   if (pageView) {
     return pageView
