@@ -1,0 +1,741 @@
+import { useState } from 'react'
+import { products } from '../data/products'
+
+const CATEGORIES = ['All', 'Coffee', 'Pastry', 'Dessert', 'Beverage', 'Tea']
+const TAX_RATE = 0.1
+const LOW_STOCK_LIMIT = 20
+
+function CartIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M3.5 5H5.7L7.5 14H17.8L19.8 8H8.8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="9.2" cy="18.2" r="1.1" />
+      <circle cx="16.6" cy="18.2" r="1.1" />
+    </svg>
+  )
+}
+
+function BoxIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M12 3.8L5 7.8L12 11.8L19 7.8L12 3.8Z" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5 8V16L12 20L19 16V8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12 12V20" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IngredientIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M8.5 4.5H15.5L15 8.2H9L8.5 4.5Z" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 8.2V18.5C9 19.6 9.9 20.5 11 20.5H13C14.1 20.5 15 19.6 15 18.5V8.2" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M7.5 12.3H16.5" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function SalesIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M7 6.2H17" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M7 10.2H17" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M7 14.2H13" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M5.5 4.2H18.5V19.8H5.5V4.2Z" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M14.8 17.5H18.7" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M16.75 15.6V19.4" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function DashboardIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <rect x="4.5" y="4.5" width="6" height="6" rx="1" strokeWidth="1.8" />
+      <rect x="13.5" y="4.5" width="6" height="6" rx="1" strokeWidth="1.8" />
+      <rect x="4.5" y="13.5" width="6" height="6" rx="1" strokeWidth="1.8" />
+      <rect x="13.5" y="13.5" width="6" height="6" rx="1" strokeWidth="1.8" />
+    </svg>
+  )
+}
+
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <circle cx="11" cy="11" r="6.3" strokeWidth="1.8" />
+      <path d="M15.8 15.8L19.3 19.3" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function MoneyIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M12 5.3V18.7" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M15.2 8.4C15.2 7.2 13.7 6.2 12 6.2C10.3 6.2 8.8 7.2 8.8 8.4C8.8 11.1 15.2 10 15.2 13C15.2 14.3 13.7 15.3 12 15.3C10.3 15.3 8.8 14.3 8.8 13" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function AlertIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M12 8V12.3" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="12" cy="16.2" r="0.9" fill="currentColor" stroke="none" />
+      <path d="M10.3 4.8L3.7 16.5C3.2 17.3 3.9 18.3 4.8 18.3H19.2C20.1 18.3 20.8 17.3 20.3 16.5L13.7 4.8C13.2 4 10.8 4 10.3 4.8Z" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function PencilIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M4.8 16.8L4 20L7.2 19.2L17.6 8.8L15.2 6.4L4.8 16.8Z" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M13.9 7.7L16.3 10.1" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M8.4 8.4V17" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M12 8.4V17" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M15.6 8.4V17" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M5.2 6.4H18.8" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M9.2 4.5H14.8" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M6.6 6.4V18.2C6.6 19 7.2 19.6 8 19.6H16C16.8 19.6 17.4 19 17.4 18.2V6.4" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function XIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M6 6L18 18" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M18 6L6 18" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function ProductModal({ initialProduct, onSubmit, onClose }) {
+  const isEditing = Boolean(initialProduct)
+  const [form, setForm] = useState(
+    initialProduct
+      ? {
+          name: initialProduct.name,
+          category: initialProduct.category,
+          price: String(initialProduct.price),
+          stock: String(initialProduct.stock),
+        }
+      : {
+          name: '',
+          category: 'Beverage',
+          price: '0.00',
+          stock: '0',
+        }
+  )
+  const [errors, setErrors] = useState({})
+
+  function setField(field, value) {
+    setForm((prev) => ({ ...prev, [field]: value }))
+    setErrors((prev) => ({ ...prev, [field]: '' }))
+  }
+
+  function validate() {
+    const next = {}
+    if (!form.name.trim()) next.name = 'Product name is required.'
+    if (!form.category.trim()) next.category = 'Category is required.'
+
+    const priceValue = Number(form.price)
+    if (Number.isNaN(priceValue) || priceValue < 0) {
+      next.price = 'Enter a valid price.'
+    }
+
+    const stockValue = Number(form.stock)
+    if (!Number.isInteger(stockValue) || stockValue < 0) {
+      next.stock = 'Stock must be a whole number.'
+    }
+
+    return next
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault()
+    const nextErrors = validate()
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors)
+      return
+    }
+
+    onSubmit({
+      name: form.name.trim(),
+      category: form.category.trim(),
+      price: Number(form.price),
+      stock: Number(form.stock),
+    })
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4"
+      onClick={(event) => event.target === event.currentTarget && onClose()}
+    >
+      <div className="w-full max-w-[500px] rounded-xl bg-white shadow-xl">
+        <div className="flex items-center justify-between border-b border-[#e5e7eb] px-5 py-4">
+          <h3 className="text-[1.05rem] font-bold text-[#0f2542]">
+            {isEditing ? 'Edit Product' : 'Add Product'}
+          </h3>
+          <button
+            onClick={onClose}
+            className="grid size-8 place-items-center rounded-lg text-[#6b7280] hover:bg-[#f3f4f6] [&_svg]:size-4"
+          >
+            <XIcon />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="px-5 py-4">
+          <div className="grid gap-3">
+            <label className="text-[0.83rem] font-medium text-[#374151]">
+              Product Name
+              <input
+                value={form.name}
+                onChange={(event) => setField('name', event.target.value)}
+                className="mt-1 w-full rounded-lg border border-[#d1d5db] px-3 py-2 text-[0.9rem] outline-none focus:border-[#2563eb]"
+              />
+              {errors.name && <span className="mt-1 block text-[0.78rem] text-[#dc2626]">{errors.name}</span>}
+            </label>
+
+            <label className="text-[0.83rem] font-medium text-[#374151]">
+              Category
+              <select
+                value={form.category}
+                onChange={(event) => setField('category', event.target.value)}
+                className="mt-1 w-full rounded-lg border border-[#d1d5db] px-3 py-2 text-[0.9rem] outline-none focus:border-[#2563eb]"
+              >
+                {CATEGORIES.filter((item) => item !== 'All').map((category) => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+              {errors.category && <span className="mt-1 block text-[0.78rem] text-[#dc2626]">{errors.category}</span>}
+            </label>
+
+            <div className="grid grid-cols-2 gap-3">
+              <label className="text-[0.83rem] font-medium text-[#374151]">
+                Price
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.price}
+                  onChange={(event) => setField('price', event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-[#d1d5db] px-3 py-2 text-[0.9rem] outline-none focus:border-[#2563eb]"
+                />
+                {errors.price && <span className="mt-1 block text-[0.78rem] text-[#dc2626]">{errors.price}</span>}
+              </label>
+
+              <label className="text-[0.83rem] font-medium text-[#374151]">
+                Stock
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={form.stock}
+                  onChange={(event) => setField('stock', event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-[#d1d5db] px-3 py-2 text-[0.9rem] outline-none focus:border-[#2563eb]"
+                />
+                {errors.stock && <span className="mt-1 block text-[0.78rem] text-[#dc2626]">{errors.stock}</span>}
+              </label>
+            </div>
+          </div>
+
+          <div className="mt-5 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-[#d1d5db] px-4 py-2 text-[0.85rem] text-[#374151] hover:bg-[#f9fafb]"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="rounded-lg bg-[#2563eb] px-4 py-2 text-[0.85rem] font-semibold text-white hover:bg-[#1d4ed8]"
+            >
+              {isEditing ? 'Save Changes' : 'Add Product'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function getDisplaySku(product, index) {
+  const prefixByCategory = {
+    Coffee: 'COF',
+    Pastry: 'PAS',
+    Dessert: 'DES',
+    Beverage: 'BEV',
+    Tea: 'TEA',
+  }
+  const prefix = prefixByCategory[product.category] ?? 'GEN'
+  const slug = product.name
+    .replace(/[^a-zA-Z\s]/g, '')
+    .trim()
+    .split(/\s+/)
+    .map((part) => part.slice(0, 3).toUpperCase())
+    .join('-')
+    .slice(0, 7)
+  const code = String(index + 1).padStart(3, '0')
+  return `${prefix}-${slug}-${code}`
+}
+
+function AdminPage({ onLogout }) {
+  const [activeSection, setActiveSection] = useState('pos')
+  const [search, setSearch] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('All')
+  const [cart, setCart] = useState([])
+  const [managedProducts, setManagedProducts] = useState(
+    products.map((product, index) => ({
+      ...product,
+      displaySku: getDisplaySku(product, index),
+    }))
+  )
+  const [productModalTarget, setProductModalTarget] = useState(null)
+
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch =
+      product.name.toLowerCase().includes(search.toLowerCase()) ||
+      product.sku.toLowerCase().includes(search.toLowerCase())
+    const matchesCategory =
+      selectedCategory === 'All' || product.category === selectedCategory
+    return matchesSearch && matchesCategory
+  })
+
+  const filteredManagedProducts = managedProducts.filter((product) => {
+    const term = search.toLowerCase()
+    return (
+      product.name.toLowerCase().includes(term) ||
+      product.displaySku.toLowerCase().includes(term) ||
+      product.category.toLowerCase().includes(term)
+    )
+  })
+
+  function addToCart(product) {
+    setCart((prevCart) => {
+      const existing = prevCart.find((item) => item.product.id === product.id)
+      if (existing) {
+        return prevCart.map((item) =>
+          item.product.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
+      }
+      return [...prevCart, { product, quantity: 1 }]
+    })
+  }
+
+  function clearCart() {
+    setCart([])
+  }
+
+  const subtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
+  const tax = subtotal * TAX_RATE
+  const total = subtotal + tax
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0)
+
+  const totalInventoryValue = managedProducts.reduce(
+    (sum, product) => sum + product.price * product.stock,
+    0
+  )
+
+  const lowStockCount = managedProducts.filter(
+    (product) => product.stock < LOW_STOCK_LIMIT
+  ).length
+
+  const sectionTitle =
+    activeSection === 'pos'
+      ? 'Products'
+      : activeSection === 'products'
+        ? 'Product Catalog'
+        : activeSection === 'ingredients'
+          ? 'Ingredients'
+          : activeSection === 'sales'
+            ? 'Sales History'
+            : 'Dashboard'
+
+  function navButtonClass(sectionKey) {
+    return `mb-1.5 flex w-full items-center gap-2 rounded-lg px-3 py-2.5 transition-colors ${
+      activeSection === sectionKey
+        ? 'bg-[#dbe8ff] font-semibold text-[#2563eb]'
+        : 'text-[#1f2937] hover:bg-[#eef2f7]'
+    }`
+  }
+
+  function handleAddProduct() {
+    setProductModalTarget('add')
+  }
+
+  function handleSaveProduct(formData) {
+    if (productModalTarget === 'add') {
+      setManagedProducts((prev) => {
+        const nextId = prev.length === 0 ? 1 : Math.max(...prev.map((item) => item.id)) + 1
+        const nextProduct = {
+          id: nextId,
+          ...formData,
+        }
+
+        return [
+          ...prev,
+          { ...nextProduct, displaySku: getDisplaySku(nextProduct, prev.length) },
+        ]
+      })
+      setProductModalTarget(null)
+      return
+    }
+
+    if (productModalTarget && typeof productModalTarget === 'object') {
+      setManagedProducts((prev) =>
+        prev.map((product, index) => {
+          if (product.id !== productModalTarget.id) {
+            return product
+          }
+          const updated = { ...product, ...formData }
+          return { ...updated, displaySku: getDisplaySku(updated, index) }
+        })
+      )
+    }
+
+    setProductModalTarget(null)
+  }
+
+  function handleDeleteProduct(productId) {
+    setManagedProducts((prev) => prev.filter((product) => product.id !== productId))
+  }
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-white font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif]">
+      <aside className="flex w-[206px] flex-shrink-0 flex-col border-r border-[#e5e7eb] bg-[#f9fafb]">
+        <div className="border-b border-[#e5e7eb] px-4 py-4">
+          <h1 className="text-[1.05rem] font-bold text-[#0f2542]">POS System</h1>
+          <p className="text-[0.78rem] text-[#6b7280]">Administrator</p>
+        </div>
+
+        <nav className="p-3 text-[0.88rem]">
+          <button onClick={() => setActiveSection('pos')} className={navButtonClass('pos')}>
+            <span className="[&_svg]:size-4"><CartIcon /></span>
+            POS
+          </button>
+          <button onClick={() => setActiveSection('products')} className={navButtonClass('products')}>
+            <span className="[&_svg]:size-4"><BoxIcon /></span>
+            Products
+          </button>
+          <button onClick={() => setActiveSection('ingredients')} className={navButtonClass('ingredients')}>
+            <span className="[&_svg]:size-4"><IngredientIcon /></span>
+            Ingredients
+          </button>
+          <button onClick={() => setActiveSection('sales')} className={navButtonClass('sales')}>
+            <span className="[&_svg]:size-4"><SalesIcon /></span>
+            Sales History
+          </button>
+          <button onClick={() => setActiveSection('dashboard')} className={navButtonClass('dashboard')}>
+            <span className="[&_svg]:size-4"><DashboardIcon /></span>
+            Dashboard
+          </button>
+        </nav>
+
+        <div className="mt-auto p-3">
+          <div className="rounded-xl border border-[#e5e7eb] bg-[#f3f4f6] p-3">
+            <p className="text-[0.72rem] text-[#9ca3af]">Logged in as</p>
+            <p className="text-[1.25rem] leading-none font-bold text-[#0f2542]">Administrator</p>
+          </div>
+          <button
+            onClick={onLogout}
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-[#d1d5db] bg-white px-3 py-2 text-[0.82rem] text-[#374151] hover:bg-[#f9fafb]"
+          >
+            <span>&#8594;</span>
+            Logout
+          </button>
+        </div>
+      </aside>
+
+      {activeSection === 'products' ? (
+        <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#f8fafc]">
+          <div className="px-5 pt-4 pb-4">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-[2rem] leading-tight font-bold text-[#0f2542]">Inventory Management</h2>
+                <p className="mt-1 text-[0.88rem] text-[#64748b]">{managedProducts.length} total products</p>
+              </div>
+              <button
+                onClick={handleAddProduct}
+                className="inline-flex items-center gap-2 rounded-lg bg-[#020617] px-4 py-2.5 text-[0.9rem] font-semibold text-white"
+              >
+                <span className="text-[1.05rem]">+</span>
+                Add Product
+              </button>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-3">
+              <article className="rounded-xl bg-[#dbe8ff] px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="grid size-8 place-items-center rounded-lg bg-[#2563eb] text-white [&_svg]:size-4">
+                    <BoxIcon />
+                  </div>
+                  <div>
+                    <p className="text-[0.86rem] text-[#2563eb]">Total Products</p>
+                    <p className="text-[2rem] leading-none font-bold text-[#0f2542]">{managedProducts.length}</p>
+                  </div>
+                </div>
+              </article>
+
+              <article className="rounded-xl bg-[#dbf4e5] px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="grid size-8 place-items-center rounded-lg bg-[#16a34a] text-white [&_svg]:size-4">
+                    <MoneyIcon />
+                  </div>
+                  <div>
+                    <p className="text-[0.86rem] text-[#16a34a]">Inventory Value</p>
+                    <p className="text-[2rem] leading-none font-bold text-[#0f5132]">${totalInventoryValue.toFixed(2)}</p>
+                  </div>
+                </div>
+              </article>
+
+              <article className="rounded-xl bg-[#f9efe2] px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="grid size-8 place-items-center rounded-lg bg-[#ea580c] text-white [&_svg]:size-4">
+                    <AlertIcon />
+                  </div>
+                  <div>
+                    <p className="text-[0.86rem] text-[#ea580c]">Low Stock Items</p>
+                    <p className="text-[2rem] leading-none font-bold text-[#78350f]">{lowStockCount}</p>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <label className="mt-4 flex items-center gap-2 rounded-lg bg-[#f3f4f6] px-3 py-2.5 text-[#6b7280]">
+              <span className="[&_svg]:size-4"><SearchIcon /></span>
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="w-full border-none bg-transparent text-[0.92rem] text-[#111827] outline-none"
+              />
+            </label>
+          </div>
+
+          <section className="min-h-0 flex-1 border-t border-[#e5e7eb] bg-white px-5 pt-4 pb-5">
+            <div className="h-full overflow-auto">
+              <table className="w-full min-w-[760px] border-separate border-spacing-0 text-left">
+                <thead>
+                  <tr className="text-[0.85rem] text-[#111827]">
+                    <th className="border-b border-[#e5e7eb] px-3 py-3 font-semibold">Product</th>
+                    <th className="border-b border-[#e5e7eb] px-3 py-3 font-semibold">SKU</th>
+                    <th className="border-b border-[#e5e7eb] px-3 py-3 font-semibold">Category</th>
+                    <th className="border-b border-[#e5e7eb] px-3 py-3 font-semibold">Price</th>
+                    <th className="border-b border-[#e5e7eb] px-3 py-3 font-semibold">Stock</th>
+                    <th className="border-b border-[#e5e7eb] px-3 py-3 font-semibold">Value</th>
+                    <th className="border-b border-[#e5e7eb] px-3 py-3 text-right font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredManagedProducts.map((product) => (
+                    <tr key={product.id} className="text-[0.95rem] text-[#111827]">
+                      <td className="border-b border-[#e5e7eb] px-3 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="size-9 rounded-md bg-[#eef2f7]" />
+                          <span className="font-medium">{product.name}</span>
+                        </div>
+                      </td>
+                      <td className="border-b border-[#e5e7eb] px-3 py-3 text-[#35547f]">{product.displaySku}</td>
+                      <td className="border-b border-[#e5e7eb] px-3 py-3">
+                        <span className="rounded-md bg-[#f3f4f6] px-2 py-1 text-[0.82rem]">{product.category}</span>
+                      </td>
+                      <td className="border-b border-[#e5e7eb] px-3 py-3 font-semibold">${product.price.toFixed(2)}</td>
+                      <td className="border-b border-[#e5e7eb] px-3 py-3">{product.stock}</td>
+                      <td className="border-b border-[#e5e7eb] px-3 py-3 font-semibold">${(product.price * product.stock).toFixed(2)}</td>
+                      <td className="border-b border-[#e5e7eb] px-3 py-3">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setProductModalTarget(product)}
+                            className="grid size-8 place-items-center rounded-lg border border-[#d1d5db] text-[#334155] hover:bg-[#f8fafc] [&_svg]:size-4"
+                          >
+                            <PencilIcon />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteProduct(product.id)}
+                            className="grid size-8 place-items-center rounded-lg border border-[#fecaca] text-[#ef4444] hover:bg-[#fef2f2] [&_svg]:size-4"
+                          >
+                            <TrashIcon />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {productModalTarget && (
+            <ProductModal
+              initialProduct={productModalTarget === 'add' ? null : productModalTarget}
+              onSubmit={handleSaveProduct}
+              onClose={() => setProductModalTarget(null)}
+            />
+          )}
+        </main>
+      ) : (
+        <>
+          <main className="flex flex-1 flex-col overflow-hidden border-r border-[#e5e7eb]">
+            <div className="px-5 py-3">
+              <h2 className="mb-3 text-[2rem] leading-tight font-bold text-[#0f2542]">{sectionTitle}</h2>
+              <label className="mb-3 flex items-center gap-2 rounded-lg bg-[#f3f4f6] px-3 py-2.5 text-[#6b7280]">
+                <span className="[&_svg]:size-4"><SearchIcon /></span>
+                <input
+                  type="text"
+                  placeholder={
+                    activeSection === 'ingredients'
+                      ? 'Search ingredients...'
+                      : activeSection === 'sales'
+                        ? 'Search transactions...'
+                        : activeSection === 'dashboard'
+                          ? 'Search dashboard metrics...'
+                          : 'Search products by name or SKU...'
+                  }
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  className="w-full border-none bg-transparent text-[0.92rem] text-[#111827] outline-none"
+                />
+              </label>
+
+              {activeSection === 'pos' && (
+                <div className="mb-2 flex flex-wrap gap-2">
+                  {CATEGORIES.map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => setSelectedCategory(category)}
+                      className={`rounded-lg px-4 py-1.5 text-[0.82rem] font-medium transition-colors ${
+                        selectedCategory === category
+                          ? 'bg-[#2563eb] text-white'
+                          : 'bg-[#f3f4f6] text-[#374151] hover:bg-[#e5e7eb]'
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto border-t border-[#e5e7eb] px-5 pt-4 pb-4">
+              {activeSection === 'pos' && (
+                <div className="grid grid-cols-4 gap-3 pb-2">
+                  {filteredProducts.map((product) => (
+                    <button
+                      key={product.id}
+                      onClick={() => addToCart(product)}
+                      className="overflow-hidden rounded-xl border border-[#e5e7eb] bg-white text-left hover:border-[#2563eb]"
+                    >
+                      <div className="h-[105px] bg-[#eef2f7]" />
+                      <div className="p-3">
+                        <p className="text-[1.85rem] leading-none text-[#93a0b4]">◉</p>
+                        <p className="font-semibold text-[#111827]">{product.name}</p>
+                        <p className="text-[0.78rem] text-[#6b7280]">{product.category}</p>
+                        <p className="mt-1 text-[0.88rem] font-bold text-[#2563eb]">
+                          ${product.price.toFixed(2)}{' '}
+                          <span className="text-[0.75rem] font-normal text-[#9ca3af]">Stock: {product.stock}</span>
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {(activeSection === 'ingredients' || activeSection === 'sales' || activeSection === 'dashboard') && (
+                <div className="grid h-full place-items-center text-center text-[#64748b]">
+                  <div>
+                    <p className="text-[1.2rem] font-semibold text-[#0f2542]">{sectionTitle}</p>
+                    <p className="mt-1 text-[0.9rem]">This section is ready for your next data module.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </main>
+
+          <aside className="flex w-[320px] flex-shrink-0 flex-col border-l border-[#e5e7eb] bg-white">
+            <div className="border-b border-[#e5e7eb] px-5 py-4">
+              <h2 className="text-[1.05rem] font-bold text-[#0f2542]">
+                {activeSection === 'pos' ? 'Current Order' : sectionTitle}
+              </h2>
+              <p className="text-[0.82rem] text-[#6b7280]">
+                {activeSection === 'pos' ? `${totalItems} items` : 'Section panel'}
+              </p>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              {activeSection !== 'pos' ? (
+                <div className="mt-12 text-center">
+                  <p className="text-[0.95rem] text-[#6b7280]">{sectionTitle} is active.</p>
+                  <p className="text-[0.88rem] text-[#9ca3af]">Use the left menu to switch sections.</p>
+                </div>
+              ) : cart.length === 0 ? (
+                <div className="mt-12 text-center">
+                  <p className="text-[1.7rem] text-[#c5ccd8]">⌀</p>
+                  <p className="text-[0.95rem] text-[#6b7280]">Cart is empty</p>
+                  <p className="text-[0.88rem] text-[#9ca3af]">Add items to start a sale</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {cart.map((item) => (
+                    <div key={item.product.id} className="flex items-center justify-between text-[0.86rem]">
+                      <span className="text-[#374151]">{item.product.name} ×{item.quantity}</span>
+                      <span className="font-semibold text-[#0f2542]">${(item.product.price * item.quantity).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-[#e5e7eb] px-5 py-4">
+              <div className="mb-1 flex justify-between text-[1.7rem] leading-none text-[#5b6677]">
+                <span>Subtotal</span>
+                <span>${activeSection === 'pos' ? subtotal.toFixed(2) : '0.00'}</span>
+              </div>
+              <div className="mb-2 flex justify-between text-[1.7rem] leading-none text-[#5b6677]">
+                <span>Tax (10%)</span>
+                <span>${activeSection === 'pos' ? tax.toFixed(2) : '0.00'}</span>
+              </div>
+              <div className="mb-3 flex justify-between text-[2rem] leading-none font-bold text-[#0f2542]">
+                <span>Total</span>
+                <span>${activeSection === 'pos' ? total.toFixed(2) : '0.00'}</span>
+              </div>
+
+              <button
+                disabled={activeSection !== 'pos' || cart.length === 0}
+                className={`mb-2 w-full rounded-lg py-2.5 text-[0.9rem] font-semibold text-white ${
+                  activeSection !== 'pos' || cart.length === 0 ? 'bg-[#8f8f9a]' : 'bg-[#2563eb] hover:bg-[#1d4ed8]'
+                }`}
+              >
+                Checkout
+              </button>
+
+              <button
+                onClick={clearCart}
+                className="w-full rounded-lg border border-[#e5e7eb] py-2.5 text-[0.88rem] text-[#6b7280] hover:bg-[#f9fafb]"
+              >
+                Clear Cart
+              </button>
+            </div>
+          </aside>
+        </>
+      )}
+    </div>
+  )
+}
+
+export default AdminPage
