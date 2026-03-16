@@ -111,10 +111,10 @@ function CashierPage({
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0)
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif]">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-white font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] md:h-screen md:flex-row md:overflow-hidden">
 
       {/* ── Left Sidebar ── */}
-      <aside className="flex w-[190px] flex-shrink-0 flex-col border-r border-[#e5e7eb] px-3 py-5">
+      <aside className="flex w-full flex-col border-b border-[#e5e7eb] px-3 py-5 md:w-[190px] md:flex-shrink-0 md:border-r md:border-b-0">
 
         {/* App title */}
         <div className="mb-6 px-1">
@@ -147,7 +147,7 @@ function CashierPage({
       </aside>
 
       {/* ── Products Panel ── */}
-      <main className="flex flex-1 flex-col overflow-hidden border-r border-[#e5e7eb] px-6 py-5">
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden border-[#e5e7eb] px-4 py-4 md:border-r md:px-6 md:py-5">
         <h2 className="mb-4 text-[1.25rem] font-bold text-[#0f2542]">Products</h2>
 
         {/* Search input */}
@@ -178,7 +178,7 @@ function CashierPage({
 
         {/* Scrollable product grid */}
         <div className="flex-1 overflow-y-auto">
-          <div className="grid grid-cols-4 gap-3 pb-2">
+          <div className="grid grid-cols-1 gap-3 pb-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredProducts.map((product) => (
               <button
                 key={product.id}
@@ -204,7 +204,7 @@ function CashierPage({
       </main>
 
       {/* ── Current Order Panel ── */}
-      <aside className="flex w-[290px] flex-shrink-0 flex-col px-5 py-5">
+      <aside className="flex w-full flex-col border-t border-[#e5e7eb] px-5 py-5 md:w-[290px] md:flex-shrink-0 md:border-t-0">
 
         {/* Order header */}
         <h2 className="text-[1.05rem] font-bold text-[#0f2542]">Current Order</h2>

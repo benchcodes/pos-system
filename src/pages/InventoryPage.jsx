@@ -201,7 +201,7 @@ function ProductModal({ initial, onSave, onClose }) {
           </select>
           {errors.category && <span className="text-[0.78rem] text-red-500">{errors.category}</span>}
         </Field>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Price (₱)">
             <input className={inputClass} type="number" min="0" step="0.01" value={form.price} onChange={(event) => set('price', event.target.value)} placeholder="0.00" />
             {errors.price && <span className="text-[0.78rem] text-red-500">{errors.price}</span>}
@@ -283,7 +283,7 @@ function IngredientModal({ initial, onSave, onClose }) {
           <input className={inputClass} value={form.unit} onChange={(event) => set('unit', event.target.value)} placeholder="e.g. kg, liters, pcs" />
           {errors.unit && <span className="text-[0.78rem] text-red-500">{errors.unit}</span>}
         </Field>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Quantity in Stock">
             <input className={inputClass} type="number" min="0" step="any" value={form.quantity} onChange={(event) => set('quantity', event.target.value)} placeholder="0" />
             {errors.quantity && <span className="text-[0.78rem] text-red-500">{errors.quantity}</span>}
@@ -394,8 +394,8 @@ function InventoryPage({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f8fafc] font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] text-[#0f172a]">
-      <aside className="flex w-[206px] flex-shrink-0 flex-col border-r border-[#e5e7eb] bg-white">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-[#f8fafc] font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] text-[#0f172a] md:h-screen md:flex-row md:overflow-hidden">
+      <aside className="flex w-full flex-col border-b border-[#e5e7eb] bg-white md:w-[206px] md:flex-shrink-0 md:border-r md:border-b-0">
         <div className="border-b border-[#e5e7eb] px-4 py-4">
           <h1 className="text-[1.05rem] font-bold text-[#0f2542]">POS System</h1>
           <p className="mt-1 text-[0.84rem] text-[#64748b]">Inventory Manager</p>

@@ -219,7 +219,7 @@ function ProductModal({ initialProduct, onSubmit, onClose }) {
               {errors.category && <span className="mt-1 block text-[0.78rem] text-[#dc2626]">{errors.category}</span>}
             </label>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="text-[0.83rem] font-medium text-[#374151]">
                 Price (₱)
                 <input
@@ -368,7 +368,7 @@ function IngredientModal({ initialIngredient, onSubmit, onClose }) {
               {errors.unit && <span className="mt-1 block text-[0.78rem] text-[#dc2626]">{errors.unit}</span>}
             </label>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="text-[0.83rem] font-medium text-[#374151]">
                 Quantity
                 <input
@@ -851,8 +851,8 @@ function AdminPage({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif]">
-      <aside className="flex w-[206px] flex-shrink-0 flex-col border-r border-[#e5e7eb] bg-[#f9fafb]">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-white font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] md:h-screen md:flex-row md:overflow-hidden">
+      <aside className="flex w-full flex-col border-b border-[#e5e7eb] bg-[#f9fafb] md:w-[206px] md:flex-shrink-0 md:border-r md:border-b-0">
         <div className="border-b border-[#e5e7eb] px-4 py-4">
           <h1 className="text-[1.05rem] font-bold text-[#0f2542]">POS System</h1>
           <p className="text-[0.78rem] text-[#6b7280]">Administrator</p>
@@ -899,7 +899,7 @@ function AdminPage({
       {activeSection === 'products' ? (
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#f8fafc]">
           <div className="px-5 pt-4 pb-4">
-            <div className="mb-4 flex items-start justify-between gap-3">
+            <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row">
               <div>
                 <h2 className="text-[2rem] leading-tight font-bold text-[#0f2542]">Inventory Management</h2>
                 <p className="mt-1 text-[0.88rem] text-[#64748b]">{managedProducts.length} total products</p>
@@ -1029,7 +1029,7 @@ function AdminPage({
       ) : activeSection === 'ingredients' ? (
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#f8fafc]">
           <div className="px-5 pt-4 pb-4">
-            <div className="mb-4 flex items-start justify-between gap-3">
+            <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row">
               <div>
                 <h2 className="text-[2rem] leading-tight font-bold text-[#0f2542]">Ingredients Management</h2>
                 <p className="mt-1 text-[0.88rem] text-[#64748b]">{ingredients.length} total ingredients</p>
@@ -1172,7 +1172,7 @@ function AdminPage({
       ) : activeSection === 'sales' ? (
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#f8fafc]">
           <div className="border-b border-[#e5e7eb] bg-[#f3f4f6] px-5 pt-4 pb-4">
-            <div className="mb-4 flex items-start justify-between gap-3">
+            <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row">
               <div>
                 <h2 className="text-[2rem] leading-tight font-bold text-[#0f2542]">Sales History</h2>
                 <p className="mt-1 text-[0.9rem] text-[#64748b]">{filteredSales.length} transactions</p>
@@ -1265,7 +1265,7 @@ function AdminPage({
         </main>
       ) : activeSection === 'dashboard' ? (
         <main className="flex min-w-0 flex-1 flex-col overflow-auto bg-[#f3f4f6] px-5 py-4">
-          <header className="mb-4 flex items-start justify-between gap-3">
+          <header className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row">
             <div>
               <h2 className="text-[2rem] leading-tight font-bold text-[#0f2542]">Dashboard</h2>
               <p className="mt-1 text-[0.9rem] text-[#64748b]">Business overview and analytics</p>
@@ -1477,7 +1477,7 @@ function AdminPage({
         </main>
       ) : (
         <>
-          <main className="flex flex-1 flex-col overflow-hidden border-r border-[#e5e7eb]">
+          <main className="flex min-w-0 flex-1 flex-col overflow-hidden border-[#e5e7eb] md:border-r">
             <div className="px-5 py-3">
               <h2 className="mb-3 text-[2rem] leading-tight font-bold text-[#0f2542]">{sectionTitle}</h2>
               <label className="mb-3 flex items-center gap-2 rounded-lg bg-[#f3f4f6] px-3 py-2.5 text-[#6b7280]">
@@ -1520,7 +1520,7 @@ function AdminPage({
 
             <div className="min-h-0 flex-1 overflow-y-auto border-t border-[#e5e7eb] px-5 pt-4 pb-4">
               {activeSection === 'pos' && (
-                <div className="grid grid-cols-4 gap-3 pb-2">
+                <div className="grid grid-cols-1 gap-3 pb-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {filteredProducts.map((product) => (
                     <button
                       key={product.id}
@@ -1546,7 +1546,7 @@ function AdminPage({
             </div>
           </main>
 
-          <aside className="flex w-[320px] flex-shrink-0 flex-col border-l border-[#e5e7eb] bg-white">
+          <aside className="flex w-full flex-col border-t border-[#e5e7eb] bg-white md:w-[320px] md:flex-shrink-0 md:border-l md:border-t-0">
             <div className="border-b border-[#e5e7eb] px-5 py-4">
               <h2 className="text-[1.05rem] font-bold text-[#0f2542]">
                 {activeSection === 'pos' ? 'Current Order' : sectionTitle}
