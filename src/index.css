@@ -1,5 +1,23 @@
 @import "tailwindcss";
 
+:root {
+	color-scheme: light;
+	--app-bg: #f3f6fc;
+	--app-text: #0f172a;
+	--app-surface: #ffffff;
+	--app-muted: #6b7280;
+	--app-border: #e5e7eb;
+}
+
+[data-theme='dark'] {
+	color-scheme: dark;
+	--app-bg: #0b1220;
+	--app-text: #e5e7eb;
+	--app-surface: #111827;
+	--app-muted: #9ca3af;
+	--app-border: #1f2937;
+}
+
 * {
 	box-sizing: border-box;
 }
@@ -14,5 +32,156 @@ body,
 
 body {
 	font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+	background: var(--app-bg);
+	color: var(--app-text);
 	overflow-x: hidden;
+	transition: background-color 160ms ease, color 160ms ease;
+}
+
+/* Dark mode overrides for utility classes currently used across app pages. */
+[data-theme='dark'] .bg-white {
+	background-color: var(--app-surface) !important;
+}
+
+[data-theme='dark'] .bg-\[\#e6ecf7\] {
+	background-color: #0b1220 !important;
+}
+
+[data-theme='dark'] .bg-\[\#f8fafc\] {
+	background-color: #0f172a !important;
+}
+
+[data-theme='dark'] .bg-\[\#f3f4f6\],
+[data-theme='dark'] .bg-\[\#f9fafb\],
+[data-theme='dark'] .bg-\[\#e5e7eb\],
+[data-theme='dark'] .bg-\[\#eef2f7\] {
+	background-color: #0f172a !important;
+}
+
+[data-theme='dark'] .bg-\[\#dbe8ff\] {
+	background-color: #1e3a5f !important;
+}
+
+[data-theme='dark'] .bg-\[\#dbf4e5\] {
+	background-color: #123726 !important;
+}
+
+[data-theme='dark'] .bg-\[\#f9efe2\] {
+	background-color: #4a2c12 !important;
+}
+
+[data-theme='dark'] .bg-\[\#efe7f8\] {
+	background-color: #31204a !important;
+}
+
+[data-theme='dark'] .bg-\[\#dcfce7\] {
+	background-color: #133124 !important;
+}
+
+[data-theme='dark'] .bg-\[\#fee2e2\] {
+	background-color: #452022 !important;
+}
+
+[data-theme='dark'] .border-\[\#e5e7eb\],
+[data-theme='dark'] .border-\[\#d1d5db\],
+[data-theme='dark'] .border-\[\#d6ddea\] {
+	border-color: var(--app-border) !important;
+}
+
+[data-theme='dark'] .text-\[\#0f2542\],
+[data-theme='dark'] .text-\[\#111827\] {
+	color: #e5e7eb !important;
+}
+
+[data-theme='dark'] .text-\[\#374151\] {
+	color: #d1d5db !important;
+}
+
+[data-theme='dark'] .text-\[\#1f2937\] {
+	color: #94a3b8 !important;
+}
+
+[data-theme='dark'] .text-\[\#0f172a\] {
+	color: #e5e7eb !important;
+}
+
+[data-theme='dark'] .text-\[\#50607e\],
+[data-theme='dark'] .text-\[\#60708e\],
+[data-theme='dark'] .text-\[\#64748b\],
+[data-theme='dark'] .text-\[\#6b7280\],
+[data-theme='dark'] .text-\[\#7b89a1\],
+[data-theme='dark'] .text-\[\#9ca3af\] {
+	color: #9ca3af !important;
+}
+
+[data-theme='dark'] .text-\[\#35547f\] {
+	color: #93c5fd !important;
+}
+
+[data-theme='dark'] .text-\[\#475569\] {
+	color: #94a3b8 !important;
+}
+
+[data-theme='dark'] .text-\[\#7e22ce\] {
+	color: #c084fc !important;
+}
+
+[data-theme='dark'] .text-\[\#6b21a8\] {
+	color: #d8b4fe !important;
+}
+
+[data-theme='dark'] .text-\[\#166534\] {
+	color: #86efac !important;
+}
+
+[data-theme='dark'] .text-\[\#b91c1c\] {
+	color: #fca5a5 !important;
+}
+
+[data-theme='dark'] .text-\[\#d1d5db\] {
+	color: #64748b !important;
+}
+
+[data-theme='dark'] .hover\:bg-\[\#f3f4f6\]:hover,
+[data-theme='dark'] .hover\:bg-\[\#f9fafb\]:hover,
+[data-theme='dark'] .hover\:bg-\[\#eef2f7\]:hover,
+[data-theme='dark'] .hover\:bg-\[\#f8fafc\]:hover {
+	background-color: #1f2937 !important;
+}
+
+[data-theme='dark'] .hover\:bg-\[\#fef2f2\]:hover {
+	background-color: #5b2328 !important;
+}
+
+.theme-toggle {
+	border: 1px solid #d1d5db;
+	background-color: rgba(255, 255, 255, 0.94);
+	color: #1f2937;
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+	box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+
+}
+
+.theme-toggle:hover {
+	background-color: #f8fafc;
+}
+
+.theme-toggle__icon {
+	background-color: #e2e8f0;
+}
+
+[data-theme='dark'] .theme-toggle {
+	border-color: #334155;
+	background-color: rgba(15, 23, 42, 0.92);
+	color: #e5e7eb;
+	box-shadow: 0 10px 30px rgba(2, 6, 23, 0.38);
+}
+
+[data-theme='dark'] .theme-toggle:hover {
+	background-color: #111827;
+}
+
+[data-theme='dark'] .theme-toggle__icon {
+	background-color: #1e293b;
 }
