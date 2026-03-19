@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { createProduct, deleteProduct, fetchProducts, updateProduct } from '../api/products'
 
 const LOW_STOCK_LIMIT = 20
 const PRODUCT_CATEGORIES = ['Coffee', 'Pastry', 'Dessert', 'Beverage', 'Tea']
@@ -319,11 +320,36 @@ function InventoryPage({
   const [search, setSearch] = useState('')
   const [productModal, setProductModal] = useState(null)
   const [ingredientModal, setIngredientModal] = useState(null)
+  const [productError, setProductError] = useState('')
 
   const products = sharedProducts ?? localProducts
   const setProducts = onProductsChange ?? setLocalProducts
   const ingredients = sharedIngredients ?? localIngredients
   const setIngredients = onIngredientsChange ?? setLocalIngredients
+
+  useEffect(() => {
+    let active = true
+
+    async function loadProducts() {
+      try {
+        const dbProducts = await fetchProducts()
+        if (active) {
+          setProducts(dbProducts)
+          setProductError('')
+        }
+      } catch (error) {
+        if (active) {
+          setProductError(error.message)
+        }
+      }
+    }
+
+    loadProducts()
+
+    return () => {
+      active = false
+    }
+  }, [setProducts])
 
   const filteredProducts = useMemo(() => {
     const term = search.toLowerCase()
@@ -364,20 +390,30 @@ function InventoryPage({
     setSearch('')
   }
 
-  function handleSaveProduct(data) {
-    if (productModal === 'add') {
-      setProducts((prev) => {
-        const nextId = prev.length === 0 ? 1 : Math.max(...prev.map((product) => product.id)) + 1
-        return [...prev, { id: nextId, ...data }]
-      })
-    } else {
-      setProducts((prev) => prev.map((product) => (product.id === productModal.id ? { ...product, ...data } : product)))
+  async function handleSaveProduct(data) {
+    try {
+      if (productModal === 'add') {
+        const created = await createProduct(data)
+        setProducts((prev) => [...prev, created])
+      } else {
+        const updated = await updateProduct(productModal.id, data)
+        setProducts((prev) => prev.map((product) => (product.id === productModal.id ? updated : product)))
+      }
+      setProductError('')
+      setProductModal(null)
+    } catch (error) {
+      setProductError(error.message)
     }
-    setProductModal(null)
   }
 
-  function handleDeleteProduct(id) {
-    setProducts((prev) => prev.filter((product) => product.id !== id))
+  async function handleDeleteProduct(id) {
+    try {
+      await deleteProduct(id)
+      setProducts((prev) => prev.filter((product) => product.id !== id))
+      setProductError('')
+    } catch (error) {
+      setProductError(error.message)
+    }
   }
 
   function handleSaveIngredient(data) {
@@ -539,6 +575,12 @@ function InventoryPage({
                 </div>
               </article>
             </div>
+          )}
+
+          {activeTab === 'products' && productError && (
+            <p className="mt-3 rounded-lg border border-[#fecaca] bg-[#fef2f2] px-3 py-2 text-[0.85rem] text-[#b91c1c]">
+              {productError}
+            </p>
           )}
 
           <label className="mt-4 flex items-center gap-2 rounded-lg bg-[#f3f4f6] px-3 py-2.5 text-[#6b7280]">

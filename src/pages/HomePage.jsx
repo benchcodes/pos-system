@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import CashierPage from './CashierPage'
 import InventoryPage from './InventoryPage'
 import AdminPage from './AdminPage'
+import { fetchAppState, saveAppState } from '../api/state'
 
 const STORAGE_KEYS = {
   products: 'pos-system-products',
@@ -197,6 +198,9 @@ function HomePage() {
   const [sharedProducts, setSharedProducts] = useState(() => loadStoredList(STORAGE_KEYS.products))
   const [sharedIngredients, setSharedIngredients] = useState(() => loadStoredList(STORAGE_KEYS.ingredients))
   const [sharedSales, setSharedSales] = useState(() => loadStoredList(STORAGE_KEYS.sales))
+  const [remoteReady, setRemoteReady] = useState(false)
+  const [syncError, setSyncError] = useState('')
+  const skipFirstSync = useRef(true)
 
   function handleResetAllData() {
     setSharedProducts([])
@@ -222,6 +226,72 @@ function HomePage() {
     window.localStorage.setItem(STORAGE_KEYS.sales, JSON.stringify(sharedSales))
   }, [sharedSales])
 
+  useEffect(() => {
+    let active = true
+
+    async function loadRemoteState() {
+      try {
+        const remoteState = await fetchAppState()
+        if (!active) {
+          return
+        }
+
+        if (Array.isArray(remoteState.products)) {
+          setSharedProducts(remoteState.products)
+        }
+        if (Array.isArray(remoteState.ingredients)) {
+          setSharedIngredients(remoteState.ingredients)
+        }
+        if (Array.isArray(remoteState.sales)) {
+          setSharedSales(remoteState.sales)
+        }
+        setSyncError('')
+      } catch (error) {
+        if (active) {
+          setSyncError(error.message)
+        }
+      } finally {
+        if (active) {
+          setRemoteReady(true)
+        }
+      }
+    }
+
+    loadRemoteState()
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!remoteReady) {
+      return
+    }
+
+    if (skipFirstSync.current) {
+      skipFirstSync.current = false
+      return
+    }
+
+    const timerId = window.setTimeout(async () => {
+      try {
+        await saveAppState({
+          products: sharedProducts,
+          ingredients: sharedIngredients,
+          sales: sharedSales,
+        })
+        setSyncError('')
+      } catch (error) {
+        setSyncError(error.message)
+      }
+    }, 250)
+
+    return () => {
+      window.clearTimeout(timerId)
+    }
+  }, [remoteReady, sharedProducts, sharedIngredients, sharedSales])
+
   const pageView = resolvePage(
     currentPage,
     () => setCurrentPage(null),
@@ -235,7 +305,16 @@ function HomePage() {
   )
 
   if (pageView) {
-    return pageView
+    return (
+      <>
+        {syncError && (
+          <p className="fixed top-2 left-1/2 z-[70] -translate-x-1/2 rounded-md border border-[#fecaca] bg-[#fef2f2] px-3 py-1.5 text-[0.78rem] text-[#b91c1c] shadow-sm">
+            DB sync warning: {syncError}
+          </p>
+        )}
+        {pageView}
+      </>
+    )
   }
 
   function handleRoleSelect(roleKey) {
