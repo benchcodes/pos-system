@@ -339,6 +339,7 @@ function InventoryPage({
   onProductsChange,
   sharedIngredients,
   onIngredientsChange,
+  onBack,
 }) {
   const [activeTab, setActiveTab] = useState('products')
   const [localProducts, setLocalProducts] = useState([])
@@ -491,14 +492,14 @@ function InventoryPage({
         <div className="mt-auto px-3 pb-3">
           <div className="rounded-xl border border-[#e5e7eb] bg-[#f8fafc] p-3">
             <p className="text-[0.72rem] text-[#6b7280]">Logged in as</p>
-            <p className="mt-0.5 text-[0.88rem] font-bold text-[#0f2542]">Inventory Manager</p>
+            <p className="mt-0.5 text-[0.88rem] font-bold text-[#0f2542]">{onBack ? 'Administrator' : 'Inventory Manager'}</p>
           </div>
           <button
-            onClick={onLogout}
+            onClick={onBack ?? onLogout}
             className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-[#d1d5db] bg-white px-3 py-2 text-[0.9rem] font-medium text-[#0f172a] hover:bg-[#f9fafb]"
           >
             <span aria-hidden="true">-&gt;</span>
-            Logout
+            {onBack ? 'Back to Admin' : 'Logout'}
           </button>
         </div>
       </aside>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import InventoryPage from './InventoryPage'
 
 const CATEGORIES = ['All', 'Coffee', 'Pastry', 'Dessert', 'Beverage', 'Tea']
 const TAX_RATE = 0.1
@@ -858,6 +859,19 @@ function AdminPage({
   function handleConfirmResetAllData() {
     onResetAllData?.()
     setIsResetConfirmOpen(false)
+  }
+
+  if (activeSection === 'products') {
+    return (
+      <InventoryPage
+        onLogout={onLogout}
+        sharedProducts={managedProducts}
+        onProductsChange={setManagedProducts}
+        sharedIngredients={ingredients}
+        onIngredientsChange={setIngredientsData}
+        onBack={() => setActiveSection('pos')}
+      />
+    )
   }
 
   return (
