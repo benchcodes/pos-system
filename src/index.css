@@ -186,6 +186,23 @@ body {
 	background-color: #57252d !important;
 }
 
+[data-theme='dark'] select {
+	color-scheme: dark;
+	background-color: #111827;
+	color: #e5e7eb;
+	border-color: var(--app-border);
+}
+
+[data-theme='dark'] select option {
+	background-color: #111827;
+	color: #e5e7eb;
+}
+
+[data-theme='dark'] select option:checked {
+	background-color: #1d4ed8;
+	color: #ffffff;
+}
+
 .theme-toggle {
 	border: 1px solid #d1d5db;
 	background-color: rgba(255, 255, 255, 0.94);

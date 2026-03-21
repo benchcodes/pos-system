@@ -228,6 +228,11 @@ function ProductModal({ initialProduct, onSubmit, onClose }) {
                   step="0.01"
                   value={form.price}
                   onChange={(event) => setField('price', event.target.value)}
+                  onFocus={(event) => {
+                    if (event.target.value === '0' || event.target.value === '0.00') {
+                      event.target.select()
+                    }
+                  }}
                   className="mt-1 w-full rounded-lg border border-[#d1d5db] px-3 py-2 text-[0.9rem] outline-none focus:border-[#2563eb]"
                 />
                 {errors.price && <span className="mt-1 block text-[0.78rem] text-[#dc2626]">{errors.price}</span>}
@@ -241,6 +246,11 @@ function ProductModal({ initialProduct, onSubmit, onClose }) {
                   step="1"
                   value={form.stock}
                   onChange={(event) => setField('stock', event.target.value)}
+                  onFocus={(event) => {
+                    if (event.target.value === '0') {
+                      event.target.select()
+                    }
+                  }}
                   className="mt-1 w-full rounded-lg border border-[#d1d5db] px-3 py-2 text-[0.9rem] outline-none focus:border-[#2563eb]"
                 />
                 {errors.stock && <span className="mt-1 block text-[0.78rem] text-[#dc2626]">{errors.stock}</span>}

@@ -204,11 +204,37 @@ function ProductModal({ initial, onSave, onClose }) {
         </Field>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Price (₱)">
-            <input className={inputClass} type="number" min="0" step="0.01" value={form.price} onChange={(event) => set('price', event.target.value)} placeholder="0.00" />
+            <input
+              className={inputClass}
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.price}
+              onChange={(event) => set('price', event.target.value)}
+              onFocus={(event) => {
+                if (event.target.value === '0' || event.target.value === '0.00') {
+                  event.target.select()
+                }
+              }}
+              placeholder="0.00"
+            />
             {errors.price && <span className="text-[0.78rem] text-red-500">{errors.price}</span>}
           </Field>
           <Field label="Stock (units)">
-            <input className={inputClass} type="number" min="0" step="1" value={form.stock} onChange={(event) => set('stock', event.target.value)} placeholder="0" />
+            <input
+              className={inputClass}
+              type="number"
+              min="0"
+              step="1"
+              value={form.stock}
+              onChange={(event) => set('stock', event.target.value)}
+              onFocus={(event) => {
+                if (event.target.value === '0') {
+                  event.target.select()
+                }
+              }}
+              placeholder="0"
+            />
             {errors.stock && <span className="text-[0.78rem] text-red-500">{errors.stock}</span>}
           </Field>
         </div>
