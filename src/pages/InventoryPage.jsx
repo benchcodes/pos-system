@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createProduct, deleteProduct, fetchProducts, updateProduct } from '../api/products'
+import { isRemoteSyncEnabled } from '../api/config'
 
 const LOW_STOCK_LIMIT = 20
 const PRODUCT_CATEGORIES = ['Coffee', 'Pastry', 'Dessert', 'Beverage', 'Tea']
@@ -105,6 +106,10 @@ function getDisplaySku(product, index) {
     .slice(0, 7)
   const code = String(index + 1).padStart(3, '0')
   return `${prefix}-${slug}-${code}`
+}
+
+function getLocalSku(id) {
+  return `SKU-${String(id).padStart(4, '0')}`
 }
 
 function Modal({ title, onClose, children }) {
@@ -356,6 +361,11 @@ function InventoryPage({
   const setIngredients = onIngredientsChange ?? setLocalIngredients
 
   useEffect(() => {
+    if (!isRemoteSyncEnabled) {
+      setProductError('')
+      return
+    }
+
     let active = true
 
     async function loadProducts() {
@@ -426,6 +436,25 @@ function InventoryPage({
   }
 
   async function handleSaveProduct(data) {
+    if (!isRemoteSyncEnabled) {
+      if (productModal === 'add') {
+        setProducts((prev) => {
+          const nextId = prev.length === 0 ? 1 : Math.max(...prev.map((item) => Number(item.id) || 0)) + 1
+          return [...prev, { id: nextId, sku: getLocalSku(nextId), ...data }]
+        })
+      } else {
+        setProducts((prev) =>
+          prev.map((product) =>
+            product.id === productModal.id ? { ...product, ...data } : product
+          )
+        )
+      }
+
+      setProductError('')
+      setProductModal(null)
+      return
+    }
+
     try {
       if (productModal === 'add') {
         const created = await createProduct(data)
@@ -442,6 +471,12 @@ function InventoryPage({
   }
 
   async function handleDeleteProduct(id) {
+    if (!isRemoteSyncEnabled) {
+      setProducts((prev) => prev.filter((product) => product.id !== id))
+      setProductError('')
+      return
+    }
+
     try {
       await deleteProduct(id)
       setProducts((prev) => prev.filter((product) => product.id !== id))

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import CashierPage from './CashierPage'
 import InventoryPage from './InventoryPage'
 import AdminPage from './AdminPage'
-import { fetchAppState, saveAppState } from '../api/state'
+import { fetchAppState, isRemoteSyncEnabled, saveAppState } from '../api/state'
 
 const STORAGE_KEYS = {
   products: 'pos-system-products',
@@ -227,6 +227,12 @@ function HomePage() {
   }, [sharedSales])
 
   useEffect(() => {
+    if (!isRemoteSyncEnabled) {
+      setSyncError('')
+      setRemoteReady(true)
+      return
+    }
+
     let active = true
 
     async function loadRemoteState() {
@@ -265,7 +271,7 @@ function HomePage() {
   }, [])
 
   useEffect(() => {
-    if (!remoteReady) {
+    if (!isRemoteSyncEnabled || !remoteReady) {
       return
     }
 
@@ -307,7 +313,7 @@ function HomePage() {
   if (pageView) {
     return (
       <>
-        {syncError && (
+        {isRemoteSyncEnabled && syncError && (
           <p className="fixed top-2 left-1/2 z-[70] -translate-x-1/2 rounded-md border border-[#fecaca] bg-[#fef2f2] px-3 py-1.5 text-[0.78rem] text-[#b91c1c] shadow-sm">
             DB sync warning: {syncError}
           </p>
