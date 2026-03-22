@@ -1,8 +1,4 @@
-import dns from 'node:dns'
 import { MongoClient } from 'mongodb'
-
-// Use reliable public DNS to resolve MongoDB SRV records in serverless environments.
-dns.setServers(['1.1.1.1', '8.8.8.8'])
 
 const uri = process.env.ATLAS_URI
 const dbName = process.env.DB_NAME || 'pos_system'
@@ -14,7 +10,9 @@ if (!uri) {
 let clientPromise = globalThis.__posMongoClientPromise
 
 if (!clientPromise) {
-  const client = new MongoClient(uri)
+  const client = new MongoClient(uri, {
+    serverSelectionTimeoutMS: 10000,
+  })
   clientPromise = client.connect()
   globalThis.__posMongoClientPromise = clientPromise
 }
