@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import InventoryPage from './InventoryPage'
 
 const CATEGORIES = ['All', 'Coffee', 'Pastry', 'Dessert', 'Beverage', 'Tea']
 const TAX_RATE = 0.1
@@ -664,6 +663,74 @@ function AdminPage({
     return { totalSales, totalRevenue, averageSale }
   }, [sales])
 
+  const dashboardTrends = useMemo(() => {
+    const DAY_MS = 24 * 60 * 60 * 1000
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const currentStart = today.getTime() - 6 * DAY_MS
+    const currentEnd = today.getTime() + DAY_MS
+    const previousStart = currentStart - 7 * DAY_MS
+    const previousEnd = currentStart
+
+    const currentSales = sales.filter((sale) => sale.createdAt >= currentStart && sale.createdAt < currentEnd)
+    const previousSales = sales.filter((sale) => sale.createdAt >= previousStart && sale.createdAt < previousEnd)
+
+    const currentRevenue = currentSales.reduce((sum, sale) => sum + Number(sale.total), 0)
+    const previousRevenue = previousSales.reduce((sum, sale) => sum + Number(sale.total), 0)
+    const currentCount = currentSales.length
+    const previousCount = previousSales.length
+    const currentAverage = currentCount === 0 ? 0 : currentRevenue / currentCount
+    const previousAverage = previousCount === 0 ? 0 : previousRevenue / previousCount
+
+    function percentChange(currentValue, previousValue) {
+      if (previousValue === 0) {
+        if (currentValue === 0) return 0
+        return null
+      }
+
+      return ((currentValue - previousValue) / previousValue) * 100
+    }
+
+    return {
+      revenueChange: percentChange(currentRevenue, previousRevenue),
+      salesChange: percentChange(currentCount, previousCount),
+      averageOrderChange: percentChange(currentAverage, previousAverage),
+    }
+  }, [sales])
+
+  function renderTrendLabel(change) {
+    if (change === null) {
+      return {
+        text: 'No baseline',
+        className: 'text-[#64748b]',
+      }
+    }
+
+    if (change > 0) {
+      return {
+        text: `↑ ${Math.abs(change).toFixed(1)}%`,
+        className: 'text-[#16a34a]',
+      }
+    }
+
+    if (change < 0) {
+      return {
+        text: `↓ ${Math.abs(change).toFixed(1)}%`,
+        className: 'text-[#ea580c]',
+      }
+    }
+
+    return {
+      text: '0.0%',
+      className: 'text-[#64748b]',
+    }
+  }
+
+  const revenueTrend = renderTrendLabel(dashboardTrends.revenueChange)
+  const salesTrend = renderTrendLabel(dashboardTrends.salesChange)
+  const averageOrderTrend = renderTrendLabel(dashboardTrends.averageOrderChange)
+
   const dashboardSeries = useMemo(() => {
     const dayFormat = new Intl.DateTimeFormat('en-PH', { month: 'short', day: 'numeric' })
     const keyFormat = new Intl.DateTimeFormat('en-CA')
@@ -859,19 +926,6 @@ function AdminPage({
   function handleConfirmResetAllData() {
     onResetAllData?.()
     setIsResetConfirmOpen(false)
-  }
-
-  if (activeSection === 'products') {
-    return (
-      <InventoryPage
-        onLogout={onLogout}
-        sharedProducts={managedProducts}
-        onProductsChange={setManagedProducts}
-        sharedIngredients={ingredients}
-        onIngredientsChange={setIngredientsData}
-        onBack={() => setActiveSection('pos')}
-      />
-    )
   }
 
   return (
@@ -1310,7 +1364,7 @@ function AdminPage({
                 <div>
                   <p className="text-[0.88rem] text-[#334155]">Total Revenue</p>
                   <p className="mt-1 text-[2rem] leading-none font-bold text-[#0f2542]">{formatMoney(salesStats.totalRevenue)}</p>
-                  <p className="mt-2 text-[0.88rem] font-semibold text-[#16a34a]">↑ 12.5%</p>
+                  <p className={`mt-2 text-[0.88rem] font-semibold ${revenueTrend.className}`}>{revenueTrend.text}</p>
                 </div>
                 <span className="grid size-10 place-items-center rounded-lg bg-[#dbe8ff] text-[#2563eb] [&_svg]:size-5">
                   <MoneyIcon />
@@ -1323,7 +1377,7 @@ function AdminPage({
                 <div>
                   <p className="text-[0.88rem] text-[#334155]">Total Sales</p>
                   <p className="mt-1 text-[2rem] leading-none font-bold text-[#0f2542]">{salesStats.totalSales}</p>
-                  <p className="mt-2 text-[0.88rem] font-semibold text-[#16a34a]">↑ 8.2%</p>
+                  <p className={`mt-2 text-[0.88rem] font-semibold ${salesTrend.className}`}>{salesTrend.text}</p>
                 </div>
                 <span className="grid size-10 place-items-center rounded-lg bg-[#d7f7e4] text-[#16a34a] [&_svg]:size-5">
                   <SalesIcon />
@@ -1336,7 +1390,7 @@ function AdminPage({
                 <div>
                   <p className="text-[0.88rem] text-[#334155]">Avg Order Value</p>
                   <p className="mt-1 text-[2rem] leading-none font-bold text-[#0f2542]">{formatMoney(salesStats.averageSale)}</p>
-                  <p className="mt-2 text-[0.88rem] font-semibold text-[#ea580c]">↓ 2.4%</p>
+                  <p className={`mt-2 text-[0.88rem] font-semibold ${averageOrderTrend.className}`}>{averageOrderTrend.text}</p>
                 </div>
                 <span className="grid size-10 place-items-center rounded-lg bg-[#f9efe2] text-[#ea580c] [&_svg]:size-5">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">

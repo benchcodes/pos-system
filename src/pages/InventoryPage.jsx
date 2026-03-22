@@ -340,8 +340,9 @@ function InventoryPage({
   sharedIngredients,
   onIngredientsChange,
   onBack,
+  initialTab = 'products',
 }) {
-  const [activeTab, setActiveTab] = useState('products')
+  const [activeTab, setActiveTab] = useState(initialTab === 'ingredients' ? 'ingredients' : 'products')
   const [localProducts, setLocalProducts] = useState([])
   const [localIngredients, setLocalIngredients] = useState([])
   const [search, setSearch] = useState('')
@@ -377,6 +378,13 @@ function InventoryPage({
       active = false
     }
   }, [setProducts])
+
+  useEffect(() => {
+    if (initialTab === 'ingredients' || initialTab === 'products') {
+      setActiveTab(initialTab)
+      setSearch('')
+    }
+  }, [initialTab])
 
   const filteredProducts = useMemo(() => {
     const term = search.toLowerCase()
