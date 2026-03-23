@@ -76,8 +76,17 @@ function CashierPage({
           return tableCart
         }
 
+        const availableStock = Math.max(0, Number(product.stock) || 0)
+        if (availableStock <= 0) {
+          return tableCart
+        }
+
         const existing = tableCart.items.find((item) => item.product.id === product.id)
         if (existing) {
+          if (existing.quantity >= availableStock) {
+            return tableCart
+          }
+
           return {
             ...tableCart,
             items: tableCart.items.map((item) =>
@@ -260,7 +269,12 @@ function CashierPage({
                   <button
                     key={product.id}
                     onClick={() => addToCart(product)}
-                    className="overflow-hidden rounded-xl border border-[#e5e7eb] bg-white text-left transition-shadow hover:border-[#2563eb] hover:shadow-sm"
+                    disabled={Number(product.stock) <= 0}
+                    className={`overflow-hidden rounded-xl border border-[#e5e7eb] bg-white text-left transition-shadow ${
+                      Number(product.stock) <= 0
+                        ? 'cursor-not-allowed opacity-60'
+                        : 'hover:border-[#2563eb] hover:shadow-sm'
+                    }`}
                   >
                     {/* Image placeholder — swap with <img> when real images are available */}
                     <div className="h-[110px] bg-[#f3f4f6]" />

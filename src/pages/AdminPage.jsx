@@ -517,8 +517,17 @@ function AdminPage({
 
   function addToCart(product) {
     setCart((prevCart) => {
+      const availableStock = Math.max(0, Number(product.stock) || 0)
+      if (availableStock <= 0) {
+        return prevCart
+      }
+
       const existing = prevCart.find((item) => item.product.id === product.id)
       if (existing) {
+        if (existing.quantity >= availableStock) {
+          return prevCart
+        }
+
         return prevCart.map((item) =>
           item.product.id === product.id
             ? { ...item, quantity: item.quantity + 1 }
@@ -1603,7 +1612,12 @@ function AdminPage({
                     <button
                       key={product.id}
                       onClick={() => addToCart(product)}
-                      className="overflow-hidden rounded-xl border border-[#e5e7eb] bg-white text-left hover:border-[#2563eb]"
+                      disabled={Number(product.stock) <= 0}
+                      className={`overflow-hidden rounded-xl border border-[#e5e7eb] bg-white text-left ${
+                        Number(product.stock) <= 0
+                          ? 'cursor-not-allowed opacity-60'
+                          : 'hover:border-[#2563eb]'
+                      }`}
                     >
                       <div className="h-[105px] bg-[#eef2f7]" />
                       <div className="p-3">
