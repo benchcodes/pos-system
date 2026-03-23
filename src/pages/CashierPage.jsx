@@ -165,6 +165,9 @@ function CashierPage({
       paymentMethod: 'Cash',
       serviceType: orderType === 'dine-in' ? 'Dine In' : 'Take Out',
       tableId: orderType === 'dine-in' ? selectedTableId : null,
+      productSummary: selectedCart
+        .map((item) => `${item.product.name} x${item.quantity}`)
+        .join(', '),
       items: selectedCart.map((item) => ({
         name: item.product.name,
         quantity: item.quantity,

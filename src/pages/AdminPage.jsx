@@ -558,6 +558,9 @@ function AdminPage({
       id: saleId,
       createdAt: now,
       paymentMethod: 'Cash',
+      productSummary: saleItems
+        .map((item) => `${item.name} x${item.quantity}`)
+        .join(', '),
       items: saleItems,
       subtotal,
       tax,
