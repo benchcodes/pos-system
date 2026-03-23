@@ -66,6 +66,64 @@ function CashierPage({
     setIsTableConfirmed(false)
   }
 
+  function getAvailableStock(productId) {
+    const product = managedProducts.find((item) => item.id === productId)
+    return Math.max(0, Number(product?.stock) || 0)
+  }
+
+  function updateCurrentCartItems(updater) {
+    if (orderType === 'take-out') {
+      setTakeOutCart((prevCart) => updater(prevCart))
+      return
+    }
+
+    if (orderType === 'dine-in') {
+      setTableCarts((prevCarts) =>
+        prevCarts.map((tableCart) =>
+          tableCart.tableId === selectedTableId
+            ? { ...tableCart, items: updater(tableCart.items) }
+            : tableCart
+        )
+      )
+    }
+  }
+
+  function changeCartItemQuantity(productId, delta) {
+    if (!canAccessMenu || delta === 0) {
+      return
+    }
+
+    updateCurrentCartItems((items) =>
+      items.flatMap((item) => {
+        if (item.product.id !== productId) {
+          return [item]
+        }
+
+        const availableStock = getAvailableStock(productId)
+        if (delta > 0 && item.quantity >= availableStock) {
+          return [item]
+        }
+
+        const nextQuantity = item.quantity + delta
+        if (nextQuantity <= 0) {
+          return []
+        }
+
+        return [{ ...item, quantity: nextQuantity }]
+      })
+    )
+  }
+
+  function removeCartItem(productId) {
+    if (!canAccessMenu) {
+      return
+    }
+
+    updateCurrentCartItems((items) =>
+      items.filter((item) => item.product.id !== productId)
+    )
+  }
+
   // Add a product to the selected table cart; increments quantity if already present
   function addToCart(product) {
     if (!canAccessMenu) {
@@ -430,14 +488,44 @@ function CashierPage({
               {selectedCart.map((item) => (
                 <div
                   key={item.product.id}
-                  className="flex items-center justify-between text-[0.85rem]"
+                  className="rounded-lg border border-[#e5e7eb] p-2"
                 >
-                  <span className="text-[#374151]">
-                    {item.product.name} ×{item.quantity}
-                  </span>
-                  <span className="font-semibold text-[#0f2542]">
-                    {formatMoney(item.product.price * item.quantity)}
-                  </span>
+                  <div className="mb-1 flex items-center justify-between gap-2 text-[0.85rem]">
+                    <span className="text-[#374151]">{item.product.name}</span>
+                    <span className="font-semibold text-[#0f2542]">
+                      {formatMoney(item.product.price * item.quantity)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 text-[0.78rem]">
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => changeCartItemQuantity(item.product.id, -1)}
+                        className="rounded border border-[#d1d5db] px-2 py-0.5 text-[#374151] hover:bg-[#f3f4f6]"
+                      >
+                        -
+                      </button>
+                      <span className="min-w-[2rem] text-center font-semibold text-[#0f2542]">{item.quantity}</span>
+                      <button
+                        onClick={() => changeCartItemQuantity(item.product.id, 1)}
+                        disabled={item.quantity >= getAvailableStock(item.product.id)}
+                        className={`rounded border px-2 py-0.5 ${
+                          item.quantity >= getAvailableStock(item.product.id)
+                            ? 'cursor-not-allowed border-[#e5e7eb] text-[#9ca3af]'
+                            : 'border-[#d1d5db] text-[#374151] hover:bg-[#f3f4f6]'
+                        }`}
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={() => removeCartItem(item.product.id)}
+                      className="text-[#dc2626] hover:underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
