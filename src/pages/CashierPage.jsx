@@ -1,26 +1,5 @@
 import { useState } from 'react'
 
-function CartIcon() {
-  return (
-    <svg viewBox="0 0 24 24" focusable="false">
-      <path d="M3.5 5H5.7L7.5 14H17.8L19.8 8H8.8" />
-      <circle cx="9.2" cy="18.2" r="1.1" />
-      <circle cx="16.6" cy="18.2" r="1.1" />
-    </svg>
-  )
-}
-
-function TableIcon() {
-  return (
-    <svg viewBox="0 0 24 24" focusable="false">
-      <rect x="5.5" y="6" width="13" height="4" rx="0.8" />
-      <path d="M8 10V18" />
-      <path d="M16 10V18" />
-      <path d="M6.5 18H17.5" />
-    </svg>
-  )
-}
-
 // Category filter options shown above the product grid
 const CATEGORIES = ['All', 'Coffee', 'Pastry', 'Dessert', 'Beverage', 'Tea']
 
@@ -38,7 +17,8 @@ function CashierPage({
   onProductsChange,
   onSalesChange,
 }) {
-  const [activeTab, setActiveTab] = useState('pos')
+  const [orderType, setOrderType] = useState(null)
+  const [isTableConfirmed, setIsTableConfirmed] = useState(false)
   const [selectedTableId, setSelectedTableId] = useState(1)
   const [tableCarts, setTableCarts] = useState(() =>
     Array.from({ length: TABLE_COUNT }, (_, index) => ({
@@ -46,6 +26,7 @@ function CashierPage({
       items: [],
     }))
   )
+  const [takeOutCart, setTakeOutCart] = useState([])
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [localProducts, setLocalProducts] = useState([])
@@ -67,9 +48,55 @@ function CashierPage({
 
   const selectedTableCart =
     tableCarts.find((tableCart) => tableCart.tableId === selectedTableId)?.items ?? []
+  const selectedCart =
+    orderType === 'take-out'
+      ? takeOutCart
+      : orderType === 'dine-in'
+        ? selectedTableCart
+        : []
+  const canAccessMenu = orderType === 'take-out' || (orderType === 'dine-in' && isTableConfirmed)
+
+  function selectOrderType(type) {
+    setOrderType(type)
+    if (type === 'dine-in') {
+      setIsTableConfirmed(false)
+      return
+    }
+
+    setIsTableConfirmed(false)
+  }
 
   // Add a product to the selected table cart; increments quantity if already present
   function addToCart(product) {
+    if (!canAccessMenu) {
+      return
+    }
+
+    if (orderType === 'take-out') {
+      setTakeOutCart((prevCart) => {
+        const availableStock = Math.max(0, Number(product.stock) || 0)
+        if (availableStock <= 0) {
+          return prevCart
+        }
+
+        const existing = prevCart.find((item) => item.product.id === product.id)
+        if (existing) {
+          if (existing.quantity >= availableStock) {
+            return prevCart
+          }
+
+          return prevCart.map((item) =>
+            item.product.id === product.id
+              ? { ...item, quantity: item.quantity + 1 }
+              : item
+          )
+        }
+
+        return [...prevCart, { product, quantity: 1 }]
+      })
+      return
+    }
+
     setTableCarts((prevCarts) => {
       return prevCarts.map((tableCart) => {
         if (tableCart.tableId !== selectedTableId) {
@@ -106,6 +133,11 @@ function CashierPage({
   }
 
   function clearCart() {
+    if (orderType === 'take-out') {
+      setTakeOutCart([])
+      return
+    }
+
     setTableCarts((prevCarts) =>
       prevCarts.map((tableCart) =>
         tableCart.tableId === selectedTableId
@@ -116,11 +148,11 @@ function CashierPage({
   }
 
   function handleCheckout() {
-    if (selectedTableCart.length === 0) return
+    if (!canAccessMenu || selectedCart.length === 0) return
 
     const now = Date.now()
     const saleId = `SALE-${String(now).slice(-8)}`
-    const subtotalValue = selectedTableCart.reduce(
+    const subtotalValue = selectedCart.reduce(
       (sum, item) => sum + item.product.price * item.quantity,
       0
     )
@@ -131,8 +163,9 @@ function CashierPage({
       id: saleId,
       createdAt: now,
       paymentMethod: 'Cash',
-      tableId: selectedTableId,
-      items: selectedTableCart.map((item) => ({
+      serviceType: orderType === 'dine-in' ? 'Dine In' : 'Take Out',
+      tableId: orderType === 'dine-in' ? selectedTableId : null,
+      items: selectedCart.map((item) => ({
         name: item.product.name,
         quantity: item.quantity,
         unitPrice: Number(item.product.price),
@@ -146,7 +179,7 @@ function CashierPage({
     setSales((prev) => [nextSale, ...prev])
     setManagedProducts((prev) =>
       prev.map((product) => {
-        const soldItem = selectedTableCart.find((item) => item.product.id === product.id)
+        const soldItem = selectedCart.find((item) => item.product.id === product.id)
         if (!soldItem) return product
 
         return {
@@ -159,13 +192,20 @@ function CashierPage({
   }
 
   // Order totals
-  const subtotal = selectedTableCart.reduce(
+  const subtotal = selectedCart.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
     0
   )
   const tax = subtotal * TAX_RATE
   const total = subtotal + tax
-  const totalItems = selectedTableCart.reduce((sum, item) => sum + item.quantity, 0)
+  const totalItems = selectedCart.reduce((sum, item) => sum + item.quantity, 0)
+
+  const orderLabel =
+    orderType === 'dine-in'
+      ? `Table #${selectedTableId}`
+      : orderType === 'take-out'
+        ? 'Take Out'
+        : 'No order selected'
 
   const tableCards = tableCarts.map((tableCart) => ({
     id: tableCart.tableId,
@@ -185,36 +225,50 @@ function CashierPage({
           <p className="text-[0.78rem] text-[#6b7280]">Cashier</p>
         </div>
 
-        {/* Navigation */}
-        <nav>
+        <div className="space-y-2">
+          <p className="px-1 text-[0.72rem] font-semibold tracking-[0.04em] text-[#9ca3af] uppercase">Service Type</p>
           <button
-            onClick={() => setActiveTab('pos')}
-            className={`mb-2 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[0.88rem] font-semibold ${
-              activeTab === 'pos'
+            onClick={() => selectOrderType('dine-in')}
+            className={`w-full rounded-lg px-3 py-2 text-left text-[0.88rem] font-semibold ${
+              orderType === 'dine-in'
                 ? 'bg-[#dbe8ff] text-[#2563eb]'
                 : 'text-[#374151] hover:bg-[#f3f4f6]'
             }`}
           >
-            <span className="[&_svg]:size-4 [&_svg]:fill-none [&_svg]:stroke-current [&_svg]:[stroke-linecap:round] [&_svg]:[stroke-linejoin:round] [&_svg]:[stroke-width:1.8]">
-              <CartIcon />
-            </span>
-            POS
+            Dine In
+          </button>
+          <button
+            onClick={() => selectOrderType('take-out')}
+            className={`w-full rounded-lg px-3 py-2 text-left text-[0.88rem] font-semibold ${
+              orderType === 'take-out'
+                ? 'bg-[#dbe8ff] text-[#2563eb]'
+                : 'text-[#374151] hover:bg-[#f3f4f6]'
+            }`}
+          >
+            Take Out
           </button>
 
-          <button
-            onClick={() => setActiveTab('table')}
-            className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[0.88rem] font-semibold ${
-              activeTab === 'table'
-                ? 'bg-[#dbe8ff] text-[#2563eb]'
-                : 'text-[#374151] hover:bg-[#f3f4f6]'
-            }`}
-          >
-            <span className="[&_svg]:size-4 [&_svg]:fill-none [&_svg]:stroke-current [&_svg]:[stroke-linecap:round] [&_svg]:[stroke-linejoin:round] [&_svg]:[stroke-width:1.8]">
-              <TableIcon />
-            </span>
-            Table
-          </button>
-        </nav>
+          {orderType === 'dine-in' && isTableConfirmed && (
+            <button
+              onClick={() => setIsTableConfirmed(false)}
+              className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-left text-[0.82rem] text-[#374151] hover:bg-[#f9fafb]"
+            >
+              Change Table
+            </button>
+          )}
+
+          {orderType && (
+            <button
+              onClick={() => {
+                setOrderType(null)
+                setIsTableConfirmed(false)
+              }}
+              className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-left text-[0.82rem] text-[#374151] hover:bg-[#f9fafb]"
+            >
+              New Order
+            </button>
+          )}
+        </div>
 
         {/* Bottom: logged-in user and logout */}
         <div className="mt-auto px-1">
@@ -232,9 +286,59 @@ function CashierPage({
 
       {/* ── Main Panel ── */}
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden border-[#e5e7eb] px-4 py-4 md:border-r md:px-6 md:py-5">
-        {activeTab === 'pos' ? (
+        {!orderType ? (
+          <div className="grid flex-1 place-items-center">
+            <div className="w-full max-w-[560px] rounded-2xl border border-[#e5e7eb] bg-[#f8fafc] p-6 text-center">
+              <h2 className="mb-2 text-[1.35rem] font-bold text-[#0f2542]">Choose Service Type</h2>
+              <p className="text-[0.9rem] text-[#6b7280]">
+                Start by choosing <strong>Dine In</strong> or <strong>Take Out</strong> from the sidebar.
+              </p>
+            </div>
+          </div>
+        ) : orderType === 'dine-in' && !isTableConfirmed ? (
           <>
-            <h2 className="mb-4 text-[1.25rem] font-bold text-[#0f2542]">Products</h2>
+            <h2 className="mb-4 text-[1.25rem] font-bold text-[#0f2542]">Choose Table</h2>
+            <p className="mb-4 text-[0.86rem] text-[#6b7280]">
+              Select a table first, then you can proceed to the menu.
+            </p>
+
+            <div className="grid grid-cols-2 gap-3 pb-2 sm:grid-cols-3 lg:grid-cols-4">
+              {tableCards.map((table) => (
+                <button
+                  key={table.id}
+                  onClick={() => {
+                    setSelectedTableId(table.id)
+                    setIsTableConfirmed(true)
+                  }}
+                  className={`rounded-xl border px-3 py-5 text-left transition-colors ${
+                    selectedTableId === table.id
+                      ? 'border-[#2563eb] bg-[#dbeafe]'
+                      : table.status === 'Occupied'
+                        ? 'border-[#fca5a5] bg-[#fff1f2] hover:bg-[#ffe4e6]'
+                        : 'border-[#bfdbfe] bg-[#eff6ff] hover:bg-[#dbeafe]'
+                  }`}
+                >
+                  <p className="text-[0.78rem] text-[#6b7280]">Table</p>
+                  <p className="text-[1.1rem] font-bold text-[#0f2542]">#{table.id}</p>
+                  <p
+                    className={`mt-2 text-[0.78rem] font-semibold ${
+                      table.status === 'Occupied' ? 'text-[#dc2626]' : 'text-[#2563eb]'
+                    }`}
+                  >
+                    {table.status}
+                  </p>
+                  <p className="mt-1 text-[0.75rem] text-[#6b7280]">
+                    {table.itemCount} item{table.itemCount === 1 ? '' : 's'}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            <h2 className="mb-4 text-[1.25rem] font-bold text-[#0f2542]">
+              Products - {orderType === 'dine-in' ? `Table #${selectedTableId}` : 'Take Out'}
+            </h2>
 
             {/* Search input */}
             <input
@@ -293,45 +397,6 @@ function CashierPage({
               </div>
             </div>
           </>
-        ) : (
-          <>
-            <h2 className="mb-4 text-[1.25rem] font-bold text-[#0f2542]">Table</h2>
-            <p className="mb-4 text-[0.86rem] text-[#6b7280]">
-              Choose a table before creating or continuing an order.
-            </p>
-
-            <div className="grid grid-cols-2 gap-3 pb-2 sm:grid-cols-3 lg:grid-cols-4">
-              {tableCards.map((table) => (
-                <button
-                  key={table.id}
-                  onClick={() => {
-                    setSelectedTableId(table.id)
-                    setActiveTab('pos')
-                  }}
-                  className={`rounded-xl border px-3 py-5 text-left transition-colors ${
-                    selectedTableId === table.id
-                      ? 'border-[#2563eb] bg-[#dbeafe]'
-                      : table.status === 'Occupied'
-                        ? 'border-[#fca5a5] bg-[#fff1f2] hover:bg-[#ffe4e6]'
-                        : 'border-[#bfdbfe] bg-[#eff6ff] hover:bg-[#dbeafe]'
-                  }`}
-                >
-                  <p className="text-[0.78rem] text-[#6b7280]">Table</p>
-                  <p className="text-[1.1rem] font-bold text-[#0f2542]">#{table.id}</p>
-                  <p
-                    className={`mt-2 text-[0.78rem] font-semibold ${
-                      table.status === 'Occupied' ? 'text-[#dc2626]' : 'text-[#2563eb]'
-                    }`}
-                  >
-                    {table.status}
-                  </p>
-                  <p className="mt-1 text-[0.75rem] text-[#6b7280]">
-                    {table.itemCount} item{table.itemCount === 1 ? '' : 's'}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </>
         )}
       </main>
 
@@ -340,22 +405,26 @@ function CashierPage({
 
         {/* Order header */}
         <h2 className="text-[1.05rem] font-bold text-[#0f2542]">Current Order</h2>
-        <p className="text-[0.90rem] font-bold text-[#6b7280]">Table #{selectedTableId}</p>
+        <p className="text-[0.90rem] font-bold text-[#6b7280]">{orderLabel}</p>
         <p className="mb-3 text-[0.82rem] text-[#6b7280]">{totalItems} items</p>
         <hr className="mb-4 border-[#e5e7eb]" />
 
         {/* Cart items or empty state message */}
         <div className="flex-1 overflow-y-auto">
-          {selectedTableCart.length === 0 ? (
+          {selectedCart.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <p className="text-[0.88rem] text-[#9ca3af]">Cart is empty</p>
               <p className="text-[0.78rem] text-[#9ca3af]">
-                Add items to start a sale for table #{selectedTableId}
+                {orderType === 'dine-in'
+                  ? `Add items to start a sale for table #${selectedTableId}`
+                  : orderType === 'take-out'
+                    ? 'Add items to start a take-out sale'
+                    : 'Choose service type to start a sale'}
               </p>
             </div>
           ) : (
             <div className="space-y-2">
-              {selectedTableCart.map((item) => (
+              {selectedCart.map((item) => (
                 <div
                   key={item.product.id}
                   className="flex items-center justify-between text-[0.85rem]"
@@ -390,9 +459,9 @@ function CashierPage({
           {/* Checkout: gray when empty, blue when cart has items */}
           <button
             onClick={handleCheckout}
-            disabled={selectedTableCart.length === 0}
+            disabled={!canAccessMenu || selectedCart.length === 0}
             className={`mb-2 w-full rounded-lg py-2.5 text-[0.9rem] font-semibold text-white transition-colors ${
-              selectedTableCart.length === 0
+              !canAccessMenu || selectedCart.length === 0
                 ? 'bg-[#9ca3af]'
                 : 'bg-[#2563eb] hover:bg-[#1d4ed8]'
             }`}
