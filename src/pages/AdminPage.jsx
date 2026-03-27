@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { getNextStaffCode, loadStoredStaff, STAFF_STORAGE_KEY } from '../data/staff'
 
 const CATEGORIES = ['All', 'Coffee', 'Pastry', 'Dessert', 'Beverage', 'Tea']
 const TAX_RATE = 0.1
@@ -54,6 +55,15 @@ function DashboardIcon() {
       <rect x="13.5" y="4.5" width="6" height="6" rx="1" strokeWidth="1.8" />
       <rect x="4.5" y="13.5" width="6" height="6" rx="1" strokeWidth="1.8" />
       <rect x="13.5" y="13.5" width="6" height="6" rx="1" strokeWidth="1.8" />
+    </svg>
+  )
+}
+
+function StaffIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <circle cx="12" cy="7.5" r="3" strokeWidth="1.8" />
+      <path d="M5.5 18.5C6.4 15.9 8.8 14.3 12 14.3C15.2 14.3 17.6 15.9 18.5 18.5" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   )
 }
@@ -492,10 +502,17 @@ function AdminPage({
   const [ingredientModalTarget, setIngredientModalTarget] = useState(null)
   const [localSales, setLocalSales] = useState([])
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false)
+  const [staffMembers, setStaffMembers] = useState(() => loadStoredStaff())
+  const [newStaffName, setNewStaffName] = useState('')
+  const [staffFormError, setStaffFormError] = useState('')
   const ingredients = sharedIngredients ?? localIngredients
   const setIngredientsData = onIngredientsChange ?? setLocalIngredients
   const sales = sharedSales ?? localSales
   const setSales = onSalesChange ?? setLocalSales
+
+  useEffect(() => {
+    window.localStorage.setItem(STAFF_STORAGE_KEY, JSON.stringify(staffMembers))
+  }, [staffMembers])
 
   const filteredProducts = managedProducts.filter((product) => {
     const matchesSearch =
@@ -639,6 +656,20 @@ function AdminPage({
       return ingredient.name.toLowerCase().includes(normalized) || ingredient.unit.toLowerCase().includes(normalized)
     })
   }, [ingredients, search])
+
+  const filteredStaffMembers = useMemo(() => {
+    const normalized = search.trim().toLowerCase()
+    if (!normalized) {
+      return staffMembers
+    }
+
+    return staffMembers.filter((staff) => {
+      return (
+        staff.name.toLowerCase().includes(normalized) ||
+        staff.code.toLowerCase().includes(normalized)
+      )
+    })
+  }, [staffMembers, search])
 
   const lowIngredientCount = useMemo(() => {
     return ingredients.filter((ingredient) => Number(ingredient.quantity) <= Number(ingredient.reorderLevel)).length
@@ -867,6 +898,8 @@ function AdminPage({
         ? 'Product Catalog'
         : activeSection === 'ingredients'
           ? 'Ingredients'
+          : activeSection === 'staff'
+            ? 'Staff Management'
           : activeSection === 'sales'
             ? 'Sales History'
             : 'Dashboard'
@@ -940,6 +973,38 @@ function AdminPage({
     setIsResetConfirmOpen(false)
   }
 
+  function handleAddStaff() {
+    const cleanedName = newStaffName.trim()
+    if (!cleanedName) {
+      setStaffFormError('Staff name is required.')
+      return
+    }
+
+    const duplicateName = staffMembers.some(
+      (staff) => staff.name.toLowerCase() === cleanedName.toLowerCase()
+    )
+
+    if (duplicateName) {
+      setStaffFormError('Staff name already exists.')
+      return
+    }
+
+    const nextStaff = {
+      id: crypto.randomUUID(),
+      name: cleanedName,
+      code: getNextStaffCode(staffMembers),
+      createdAt: Date.now(),
+    }
+
+    setStaffMembers((prev) => [...prev, nextStaff])
+    setNewStaffName('')
+    setStaffFormError('')
+  }
+
+  function handleDeleteStaff(staffId) {
+    setStaffMembers((prev) => prev.filter((staff) => staff.id !== staffId))
+  }
+
   return (
     <div className="flex min-h-screen flex-col overflow-x-hidden bg-white font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] md:h-screen md:flex-row md:overflow-hidden">
       <aside className="flex w-full flex-col border-b border-[#e5e7eb] bg-[#f9fafb] md:w-[206px] md:flex-shrink-0 md:border-r md:border-b-0">
@@ -960,6 +1025,10 @@ function AdminPage({
           <button onClick={() => setActiveSection('ingredients')} className={navButtonClass('ingredients')}>
             <span className="[&_svg]:size-4"><IngredientIcon /></span>
             Ingredients
+          </button>
+          <button onClick={() => setActiveSection('staff')} className={navButtonClass('staff')}>
+            <span className="[&_svg]:size-4"><StaffIcon /></span>
+            Staff
           </button>
           <button onClick={() => setActiveSection('sales')} className={navButtonClass('sales')}>
             <span className="[&_svg]:size-4"><SalesIcon /></span>
@@ -1258,6 +1327,95 @@ function AdminPage({
               onClose={() => setIngredientModalTarget(null)}
             />
           )}
+        </main>
+      ) : activeSection === 'staff' ? (
+        <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#f8fafc]">
+          <div className="border-b border-[#e5e7eb] bg-[#f3f4f6] px-5 pt-4 pb-4">
+            <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row">
+              <div>
+                <h2 className="text-[2rem] leading-tight font-bold text-[#0f2542]">Staff Management</h2>
+                <p className="mt-1 text-[0.9rem] text-[#64748b]">{staffMembers.length} registered staff members</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-[#e5e7eb] bg-white p-3">
+              <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+                <input
+                  type="text"
+                  value={newStaffName}
+                  onChange={(event) => {
+                    setNewStaffName(event.target.value)
+                    setStaffFormError('')
+                  }}
+                  placeholder="Enter staff full name"
+                  className="w-full rounded-lg border border-[#d1d5db] px-3 py-2 text-[0.9rem] outline-none focus:border-[#2563eb]"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddStaff}
+                  className="rounded-lg bg-[#2563eb] px-4 py-2 text-[0.88rem] font-semibold text-white hover:bg-[#1d4ed8]"
+                >
+                  Add Staff
+                </button>
+              </div>
+              {staffFormError && (
+                <p className="mt-2 text-[0.8rem] text-[#dc2626]">{staffFormError}</p>
+              )}
+            </div>
+
+            <label className="mt-4 flex items-center gap-2 rounded-lg bg-[#e5e7eb] px-3 py-2.5 text-[#6b7280]">
+              <span className="[&_svg]:size-4"><SearchIcon /></span>
+              <input
+                type="text"
+                placeholder="Search by staff name or code..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="w-full border-none bg-transparent text-[0.92rem] text-[#111827] outline-none"
+              />
+            </label>
+          </div>
+
+          <section className="min-h-0 flex-1 overflow-auto border-t border-[#e5e7eb] bg-[#f8fafc] px-5 py-4">
+            {filteredStaffMembers.length === 0 ? (
+              <div className="grid h-full place-items-center text-center text-[#64748b]">
+                <div>
+                  <p className="text-[1.2rem] font-semibold text-[#0f2542]">No staff found</p>
+                  <p className="mt-1 text-[0.9rem]">Add staff to enable Time In/Time Out.</p>
+                </div>
+              </div>
+            ) : (
+              <table className="w-full min-w-[720px] border-separate border-spacing-0 text-left">
+                <thead>
+                  <tr className="text-[0.85rem] text-[#111827]">
+                    <th className="border-b border-[#e5e7eb] px-3 py-3 font-semibold">Code</th>
+                    <th className="border-b border-[#e5e7eb] px-3 py-3 font-semibold">Name</th>
+                    <th className="border-b border-[#e5e7eb] px-3 py-3 font-semibold">Created</th>
+                    <th className="border-b border-[#e5e7eb] px-3 py-3 text-right font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredStaffMembers.map((staff) => (
+                    <tr key={staff.id} className="text-[0.95rem] text-[#111827]">
+                      <td className="border-b border-[#e5e7eb] px-3 py-3 font-semibold text-[#0f2542]">{staff.code}</td>
+                      <td className="border-b border-[#e5e7eb] px-3 py-3">{staff.name}</td>
+                      <td className="border-b border-[#e5e7eb] px-3 py-3 text-[#475569]">{formatDateTime(staff.createdAt ?? Date.now())}</td>
+                      <td className="border-b border-[#e5e7eb] px-3 py-3">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteStaff(staff.id)}
+                            className="grid size-8 place-items-center rounded-lg border border-[#fecaca] text-[#ef4444] hover:bg-[#fef2f2] [&_svg]:size-4"
+                          >
+                            <TrashIcon />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
         </main>
       ) : activeSection === 'sales' ? (
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#f8fafc]">

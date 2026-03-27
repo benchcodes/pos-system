@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import CashierPage from './CashierPage'
 import InventoryPage from './InventoryPage'
 import AdminPage from './AdminPage'
+import StaffAttendancePage from './StaffAttendancePage'
 import { fetchAppState, isRemoteSyncEnabled, saveAppState } from '../api/state'
 
 const STORAGE_KEYS = {
@@ -50,9 +51,16 @@ const ROLE_OPTIONS = [
     buttonText: 'Login as Administrator',
     accent: 'purple',
   },
+  {
+    key: 'staff-attendance',
+    title: 'Staff Attendance',
+    description: 'Record staff time in and time out logs',
+    buttonText: 'Open Staff Attendance',
+    accent: 'amber',
+  },
 ]
 
-const NAVIGABLE_ROLES = new Set(['cashier', 'inventory', 'admin'])
+const NAVIGABLE_ROLES = new Set(['cashier', 'inventory', 'admin', 'staff-attendance'])
 
 const CARD_ACCENT_CLASSES = {
   blue: {
@@ -67,6 +75,10 @@ const CARD_ACCENT_CLASSES = {
     icon: 'bg-[#eadffd] text-[#9333ea]',
     button: 'bg-[#9333ea]',
   },
+  amber: {
+    icon: 'bg-[#ffedd5] text-[#c2410c]',
+    button: 'bg-[#ea580c]',
+  },
 }
 
 const ROLE_CARD_CLASS =
@@ -79,6 +91,7 @@ const ICON_BY_ROLE = {
   cashier: CartIcon,
   inventory: BoxIcon,
   admin: ShieldIcon,
+  'staff-attendance': ClockIcon,
 }
 
 function CartIcon() {
@@ -105,6 +118,15 @@ function ShieldIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
       <path d="M12 3L18.5 5.5V11.4C18.5 15.3 15.8 18.7 12 20C8.2 18.7 5.5 15.3 5.5 11.4V5.5L12 3Z" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function ClockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <circle cx="12" cy="12" r="8.5" strokeWidth="1.8" />
+      <path d="M12 7.5V12L14.8 13.8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -188,6 +210,10 @@ function resolvePage(
         onResetAllData={onResetAllData}
       />
     )
+  }
+
+  if (pageKey === 'staff-attendance') {
+    return <StaffAttendancePage onLogout={onLogout} />
   }
 
   return null
@@ -339,7 +365,7 @@ function HomePage() {
           <p className="mt-[0.35rem] text-[0.95rem] text-[#50607e]">Select your role to continue</p>
         </header>
 
-        <div className="grid gap-4 min-[901px]:grid-cols-3 max-[900px]:mx-auto max-[900px]:max-w-[360px]">
+        <div className="grid gap-4 min-[1100px]:grid-cols-4 min-[901px]:grid-cols-2 max-[900px]:mx-auto max-[900px]:max-w-[360px]">
           {ROLE_OPTIONS.map((role) => (
             <RoleCard
               key={role.key}
